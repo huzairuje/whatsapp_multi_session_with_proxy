@@ -54,12 +54,6 @@ type Proxy struct {
 	Directory string `mapstructure:"directory"`
 }
 
-type MessageStatus struct {
-	Enable              bool   `mapstructure:"enable"`
-	BaseUrl             string `mapstructure:"baseUrl"`
-	UpdateMessageStatus string `mapstructure:"updateMessageStatus"`
-}
-
 type StartUp struct {
 	EnableAutoLogin bool `mapstructure:"enableAutoLogin"`
 }
