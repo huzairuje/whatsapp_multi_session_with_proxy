@@ -1,0 +1,32 @@
+env: local
+port: 1234
+pprof:
+  enable: true
+  portPprof: 6060
+autoLogout: false
+autoDisconnect: false
+proxy:
+  enable: true
+  directory: ./webshare_10_proxies.txt
+startUp:
+  enableAutoLogin: true
+shutDown:
+  enableAutoShutDown: false
+messageStatus:
+  enable: false
+  baseUrl: https://sms.mobiledata.id
+  updateMessageStatus: wa/masking/golang/update_status.php
+cronjob:
+  autoPresence:
+    enable: false
+    cronJobSchedule: "0 0 * * 0"
+deleteAfterSend:
+  enable: false
+postgres:
+  dbName: coba_baru_whatsapp
+  host: localhost
+  password: postgres
+  port: 5432
+  schema: public
+  user: postgres
+  enablePostgres: true
