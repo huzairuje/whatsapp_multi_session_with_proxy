@@ -29,8 +29,7 @@ import (
 )
 
 var (
-	ClientConcurrent  sync.Map
-	processedMessages sync.Map
+	ClientConcurrent sync.Map
 )
 
 type CommandHandler struct {
@@ -1338,37 +1337,5 @@ func (ch CommandHandler) handleSendMedia(sender types.JID, JIDS []string, data [
 }
 
 func (ch CommandHandler) eventHandler(evt interface{}) {
-	//switch _ = evt.(type) {
-	//case *events.Message:
-	//case *events.Receipt:
-	//messageIDs := v.MessageIDs
-	//for _, singleMessageID := range messageIDs {
-	//	evtType := v.Type.GoString()
-	//
-	//	var status int
-	//	if strings.Contains(evtType, "types.ReceiptTypeDelivered") {
-	//		status = primitive.StatusDelivered
-	//	} else if strings.Contains(evtType, "types.ReceiptTypeRead") {
-	//		status = primitive.StatusRead
-	//	} else {
-	//		continue
-	//	}
-	//
-	//	// Check if the message has already been processed
-	//	if val, exists := processedMessages.Load(singleMessageID); exists {
-	//		upsertMsg := val.(primitive.UpsertMessage)
-	//		if upsertMsg.Type == status {
-	//			continue
-	//		}
-	//	}
-	//
-	//	processedMessages.Store(singleMessageID, primitive.UpsertMessage{
-	//		MessageID:           singleMessageID,
-	//		Type:                status,
-	//		IsSentUpsertMessage: true,
-	//	})
-	//}
-	//default:
-	//	_ = evt
-	//}
+	// TODO add action if something like the message has been delivered or has been readed.
 }

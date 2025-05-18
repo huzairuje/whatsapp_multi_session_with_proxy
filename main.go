@@ -84,16 +84,12 @@ func main() {
 		}
 	}()
 
-	// Wait for interrupt signal to gracefully shut down the server with
-	// a timeout of 1 second.
-	quit := make(chan os.Signal)
-	// kill (no param) default sends syscall.SIGTERM
-	// kill -2 is syscall.SIGINT
-	// kill -9 is syscall. SIGKILL but can't be caught, so don't need to add it
+	// Wait for interrupt signal to gracefully shut down the server.
+	quit := make(chan os.Signal, 1) // <- buffered channel of size 1
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Println("Shutdown Server ...")
 
+	log.Println("Shutdown Server ...")
 	event.MustFire(primitive.ShutDownEvent, nil)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -103,7 +99,7 @@ func main() {
 	}
 	select {
 	case <-ctx.Done():
-		log.Println("timeout of 1 seconds.")
+		log.Println("timeout of 1 second.")
 	}
 	log.Println("Server exiting")
 }
