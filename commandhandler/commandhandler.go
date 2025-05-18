@@ -784,12 +784,6 @@ func (ch CommandHandler) HandleDisconnectSingleDevice(ctx context.Context, sende
 	//destroy Proxy on runtime
 	ch.ProxyManager.RemoveUser(senderJidTypes.User)
 
-	//destroy token
-	ch.ProxyManager.RemoveUser(senderJidTypes.User)
-	if err != nil {
-		log.Errorf("disableProxy(senderJidTypes.User), got err : %v", err)
-	}
-
 	return nil
 }
 
