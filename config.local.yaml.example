@@ -30,3 +30,7 @@ postgres:
   schema: public
   user: postgres
   enablePostgres: true
+
+dashboard:
+  jwt_secret_key: "your-super-secure-and-long-jwt-secret-key-please-change"
+  otp_sender_jid: "1234567890@s.whatsapp.net" # Replace with the actual JID of the OTP sending device

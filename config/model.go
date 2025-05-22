@@ -41,6 +41,13 @@ type Config struct {
 	DeleteAfterSend DeleteAfterSend `mapstructure:"deleteAfterSend"`
 	Postgres        PostgresConfig  `mapstructure:"postgres"`
 	Redis           RedisConfig     `mapstructure:"redis"`
+	Dashboard       DashboardConfig `mapstructure:"dashboard"` // Added for dashboard configuration
+}
+
+// DashboardConfig holds configuration specific to the dashboard feature
+type DashboardConfig struct {
+	JwtSecretKey string `mapstructure:"jwt_secret_key"`
+	OtpSenderJID string `mapstructure:"otp_sender_jid"`
 }
 
 type Pprof struct {
