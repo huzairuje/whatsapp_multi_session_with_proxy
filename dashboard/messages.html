@@ -1,0 +1,56 @@
+<h2>Send Single Text Message</h2>
+<form id="send-message-form" hx-post="/dashboard/api/send-message" hx-target="#send-message-response" hx-swap="innerHTML">
+    <div>
+        <label for="sender-jid">Select Sender:</label>
+        <select id="sender-jid" name="sender_jid" hx-get="/dashboard/api/active-senders" hx-trigger="load" hx-swap="innerHTML">
+            <option value="">Loading active senders...</option>
+        </select>
+    </div>
+    <br>
+    <div>
+        <label for="recipient-jid">Recipient JID:</label>
+        <input type="text" id="recipient-jid" name="recipient_jid" placeholder="e.g., 1234567890@s.whatsapp.net" style="width: 250px;" required>
+    </div>
+    <br>
+    <div>
+        <label for="message">Message:</label>
+        <textarea id="message" name="message" rows="4" placeholder="Enter your message here..." style="width: 100%; box-sizing: border-box;" required></textarea>
+    </div>
+    <br>
+    <div>
+        <button type="submit">Send Message</button>
+    </div>
+</form>
+
+<div id="send-message-response" style="margin-top: 20px;">
+    <!-- Response from the server will be displayed here -->
+</div>
+
+<style>
+    #send-message-form div {
+        margin-bottom: 10px;
+    }
+    #send-message-form label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    #send-message-form input[type="text"],
+    #send-message-form select,
+    #send-message-form textarea {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    #send-message-form button {
+        padding: 10px 15px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    #send-message-form button:hover {
+        background-color: #0056b3;
+    }
+</style>

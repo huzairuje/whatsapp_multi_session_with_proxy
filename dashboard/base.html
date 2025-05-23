@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        body { font-family: sans-serif; margin: 0; }
+        .sidebar { width: 200px; background: #f0f0f0; padding: 15px; height: 100vh; position: fixed; }
+        .sidebar a { display: block; padding: 10px; text-decoration: none; color: #333; }
+        .sidebar a:hover { background: #ddd; }
+        .content { margin-left: 230px; padding: 15px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Menu</h2>
+        <a href="/dashboard/home" hx-get="/dashboard/home.html" hx-target="#content" hx-push-url="/dashboard/home">Home</a>
+        <a href="/dashboard/messages" hx-get="/dashboard/messages.html" hx-target="#content" hx-push-url="/dashboard/messages">Messages</a>
+        <a href="/dashboard/devices" hx-get="/dashboard/devices.html" hx-target="#content" hx-push-url="/dashboard/devices">Devices</a>
+        <a href="/dashboard/settings" hx-get="/dashboard/settings.html" hx-target="#content" hx-push-url="/dashboard/settings">Settings</a>
+    </div>
+    <div class="content" id="content" hx-get="/dashboard/home.html" hx-trigger="load">
+        <!-- Content will be loaded here by HTMX -->
+        <p>Loading initial dashboard content...</p>
+    </div>
+</body>
+</html>
