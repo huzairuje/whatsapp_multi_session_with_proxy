@@ -35,14 +35,14 @@ func (h Handler) ServeSendPresence(c *gin.Context) {
 	senderString := c.Query("sender")
 
 	if senderString == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "sender seharusnya diisi dengan nomor yang valid"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageSenderShouldBeFilled})
 		return
 	}
 	senderJidTypes := types.NewJID(senderString, types.DefaultUserServer)
 
 	clientSpecificUser, ok := commandhandler.LoadClientConcurrent(senderJidTypes.User)
 	if !ok || clientSpecificUser == nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "gagal kirim"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
@@ -52,7 +52,7 @@ func (h Handler) ServeSendPresence(c *gin.Context) {
 	}
 
 	if !clientSpecificUser.IsLoggedIn() {
-		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": "gagal kirim, tolong hit endpoint untuk melakukan qrcode"})
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
@@ -72,14 +72,14 @@ func (h Handler) ServeSendText(c *gin.Context) {
 	senderString := c.Query("sender")
 
 	if senderString == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "sender seharusnya diisi dengan nomor yang valid"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageSenderShouldBeFilled})
 		return
 	}
 	senderJidTypes := types.NewJID(senderString, types.DefaultUserServer)
 
 	clientSpecificUser, ok := commandhandler.LoadClientConcurrent(senderJidTypes.User)
 	if !ok || clientSpecificUser == nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "gagal kirim"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
@@ -89,13 +89,13 @@ func (h Handler) ServeSendText(c *gin.Context) {
 	}
 
 	if !clientSpecificUser.IsLoggedIn() {
-		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": "gagal kirim, tolong hit endpoint untuk melakukan qrcode"})
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
 	var requestBody primitive.SendTextSingleRequest
 	if err := c.BindJSON(&requestBody); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "Error decoding JSON"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageInvalidJson})
 		return
 	}
 
@@ -127,14 +127,14 @@ func (h Handler) ServeSendTextBulk(c *gin.Context) {
 	// Get query parameters
 	senderString := c.Query("sender")
 	if senderString == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "sender seharusnya diisi dengan nomor yang valid"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageSenderShouldBeFilled})
 		return
 	}
 	senderJidTypes := types.NewJID(senderString, types.DefaultUserServer)
 
 	clientSpecificUser, ok := commandhandler.LoadClientConcurrent(senderJidTypes.User)
 	if !ok || clientSpecificUser == nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "gagal kirim"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
@@ -144,13 +144,13 @@ func (h Handler) ServeSendTextBulk(c *gin.Context) {
 	}
 
 	if !clientSpecificUser.IsLoggedIn() {
-		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": "gagal kirim, tolong hit endpoint untuk melakukan qrcode"})
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
 	var requestBody primitive.SendTextBulkRequest
 	if err := c.BindJSON(&requestBody); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "error decoding JSON"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageInvalidJson})
 		return
 	}
 
@@ -178,14 +178,14 @@ func (h Handler) ServeStatus(c *gin.Context) {
 	// Get query parameters
 	senderString := c.Query("sender")
 	if senderString == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "sender should be filled"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageSenderShouldBeFilled})
 		return
 	}
 	senderJidTypes := types.NewJID(senderString, types.DefaultUserServer)
 
 	clientSpecificUser, ok := commandhandler.LoadClientConcurrent(senderJidTypes.User)
 	if !ok || clientSpecificUser == nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "gagal kirim"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
@@ -195,7 +195,7 @@ func (h Handler) ServeStatus(c *gin.Context) {
 	}
 
 	if !clientSpecificUser.IsLoggedIn() {
-		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": "gagal kirim, tolong hit endpoint untuk melakukan qrcode"})
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
@@ -220,14 +220,14 @@ func (h Handler) ServeCheckUser(c *gin.Context) {
 	// Get query parameters
 	senderString := c.Query("sender")
 	if senderString == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "sender should be filled"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageSenderShouldBeFilled})
 		return
 	}
 	senderJidTypes := types.NewJID(senderString, types.DefaultUserServer)
 
 	clientSpecificUser, ok := commandhandler.LoadClientConcurrent(senderJidTypes.User)
 	if !ok || clientSpecificUser == nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "gagal kirim"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
@@ -237,13 +237,13 @@ func (h Handler) ServeCheckUser(c *gin.Context) {
 	}
 
 	if !clientSpecificUser.IsLoggedIn() {
-		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": "gagal kirim, tolong hit endpoint untuk melakukan qrcode kembali"})
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
 	var request primitive.CheckUserBulkRequest
 	if err := c.BindJSON(&request); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "Error decoding JSON"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageInvalidJson})
 		return
 	}
 
@@ -258,7 +258,7 @@ func (h Handler) ServeCheckUser(c *gin.Context) {
 		for _, val := range request.Recipients {
 			isRecipientValid := utils.ValidatePhoneNumber(val)
 			if !isRecipientValid {
-				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": `your number recipient is not contains "+"`})
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageInvalidPhoneNumber})
 				return
 			}
 		}
@@ -290,7 +290,7 @@ func (h Handler) ServeAutoLogin(c *gin.Context) {
 		h.CommandHandler.HandleLoginAllDevices()
 	}()
 
-	c.JSON(http.StatusOK, gin.H{"message": "success trigger auto login"})
+	c.JSON(http.StatusOK, gin.H{"message": primitive.MessageTriggeredAutoLogin})
 	return
 }
 
@@ -314,7 +314,7 @@ func (h Handler) ServeAutoDisconnect(c *gin.Context) {
 		// Execute the HandleDisconnectAllDevices function
 		h.CommandHandler.HandleDisconnectAllDevices()
 	}()
-	c.JSON(http.StatusOK, gin.H{"message": "success trigger auto disconnect"})
+	c.JSON(http.StatusOK, gin.H{"message": primitive.MessageTriggeredAutoDisconnect})
 	return
 }
 
@@ -354,13 +354,13 @@ func (h Handler) ServeDetailDevices(c *gin.Context) {
 	jidStringReq := c.Param("jid")
 	jid, ok := utils.ParseJID(jidStringReq)
 	if !ok {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "invalid jid request"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageInvalidJidRequest})
 		return
 	}
 
 	response := h.CommandHandler.HandleGetSingleDevices(c.Request.Context(), jid)
 	if response.User == "" {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "your request jid is not found"})
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": primitive.MessageJidNotFound})
 		return
 	}
 
@@ -378,14 +378,14 @@ func (h Handler) ServeCheckUserSingle(c *gin.Context) {
 	// Get query parameters
 	senderString := c.Query("sender")
 	if senderString == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "sender should be filled"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageSenderShouldBeFilled})
 		return
 	}
 	senderJidTypes := types.NewJID(senderString, types.DefaultUserServer)
 
 	clientSpecificUser, ok := commandhandler.LoadClientConcurrent(senderJidTypes.User)
 	if !ok || clientSpecificUser == nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "gagal kirim"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
@@ -395,13 +395,13 @@ func (h Handler) ServeCheckUserSingle(c *gin.Context) {
 	}
 
 	if !clientSpecificUser.IsLoggedIn() {
-		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": "gagal kirim, tolong hit endpoint untuk melakukan qrcode kembali"})
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
 	var request primitive.CheckUserSingleRequest
 	if err := c.BindJSON(&request); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "Error decoding JSON"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageInvalidJson})
 		return
 	}
 
@@ -414,7 +414,7 @@ func (h Handler) ServeCheckUserSingle(c *gin.Context) {
 
 	isRecipientValid := utils.ValidatePhoneNumber(request.Recipient)
 	if !isRecipientValid {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": `your number recipient is not contains "+"`})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageInvalidPhoneNumber})
 		return
 	}
 
@@ -433,14 +433,14 @@ func (h Handler) NewUploadHandler(c *gin.Context) {
 	// Get query parameters
 	senderString := c.Query("sender")
 	if senderString == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "sender should be filled"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": primitive.MessageSenderShouldBeFilled})
 		return
 	}
 	senderJidTypes := types.NewJID(senderString, types.DefaultUserServer)
 
 	clientSpecificUser, ok := commandhandler.LoadClientConcurrent(senderJidTypes.User)
 	if !ok || clientSpecificUser == nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "gagal kirim"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
@@ -450,14 +450,14 @@ func (h Handler) NewUploadHandler(c *gin.Context) {
 	}
 
 	if !clientSpecificUser.IsLoggedIn() {
-		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": "gagal kirim, tolong hit endpoint untuk melakukan qrcode kembali"})
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
 	err := c.Request.ParseMultipartForm(10 << 20)
 	if err != nil {
 		log.Errorf("Failed to parse multipart form : %v", err)
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "Ada galat pada saat parse multipart form atau request tidak valid"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageErrorRequestMultiPart})
 		return
 	}
 
@@ -465,7 +465,7 @@ func (h Handler) NewUploadHandler(c *gin.Context) {
 	files, ok := c.Request.MultipartForm.File["file"]
 	if !ok || len(files) == 0 {
 		log.Errorf("No files found in the request")
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "No files found in the request"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageFileNotFound})
 		return
 	}
 
@@ -479,7 +479,7 @@ func (h Handler) NewUploadHandler(c *gin.Context) {
 		file, err := handler.Open()
 		if err != nil {
 			log.Errorf("Failed to open file : %v", err)
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed to read file data"})
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": primitive.MessageFailedToReadFileData})
 			return
 		}
 
@@ -487,20 +487,20 @@ func (h Handler) NewUploadHandler(c *gin.Context) {
 		data, err := io.ReadAll(file)
 		if err != nil {
 			log.Errorf("Failed to read file data : %v", err)
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed to read file data"})
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": primitive.MessageFailedToReadFileData})
 			return
 		}
 
 		// Close the file explicitly after reading the data
 		if err := file.Close(); err != nil {
 			log.Errorf("Error closing file: %v", err)
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed to close file"})
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": primitive.MessageFailedToCloseFile})
 			return
 		}
 
 		sliceJID, err := utils.ValidateStringArrayAsStringArray(recipientJIDs)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Ada galat pada parameter recipients atau parameter recipients salah atau tidak ditemukan"})
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": primitive.MessageInvalidRecipient})
 			return
 		}
 
@@ -517,7 +517,7 @@ func (h Handler) NewUploadHandler(c *gin.Context) {
 		}
 		if err != nil {
 			log.Errorf("Failed to handle file upload : %v", err)
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Ada galat pada saat upload file"})
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": primitive.MessageInvalidUploadFile})
 			return
 		}
 
@@ -534,14 +534,14 @@ func (h Handler) NewUploadSingleHandler(c *gin.Context) {
 	senderString := c.Query("sender")
 
 	if senderString == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "sender seharusnya diisi dengan nomor yang valid"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageSenderShouldBeFilled})
 		return
 	}
 	senderJidTypes := types.NewJID(senderString, types.DefaultUserServer)
 
 	clientSpecificUser, ok := commandhandler.LoadClientConcurrent(senderJidTypes.User)
 	if !ok || clientSpecificUser == nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "gagal kirim"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
@@ -551,13 +551,13 @@ func (h Handler) NewUploadSingleHandler(c *gin.Context) {
 	}
 
 	if !clientSpecificUser.IsLoggedIn() {
-		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": "gagal kirim, tolong hit endpoint untuk melakukan qrcode"})
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
 	var request primitive.SendSingleMediaRequest
 	if err := c.BindJSON(&request); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "Error decoding JSON"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageInvalidJson})
 		return
 	}
 
@@ -572,13 +572,13 @@ func (h Handler) NewUploadSingleHandler(c *gin.Context) {
 	fileURL := request.File
 	resp, err := http.Get(fileURL)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed to download file"})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": primitive.MessageFailedToDownloadFile})
 		return
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		_ = resp.Body.Close()
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "Failed to download file, invalid URL"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageFailedToDownloadFile})
 		return
 	}
 
@@ -601,7 +601,7 @@ func (h Handler) NewUploadSingleHandler(c *gin.Context) {
 	// Read the file content
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed to read file data"})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": primitive.MessageFailedToReadFileData})
 		return
 	}
 
@@ -618,7 +618,8 @@ func (h Handler) NewUploadSingleHandler(c *gin.Context) {
 	if utils.IsImage(mimeType) {
 		uploadResp, err = h.CommandHandler.HandleSendImage(senderJidTypes, sliceJID, data, request.Caption)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed send data"})
+			log.Errorf("Failed to handle file upload : %v", err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": primitive.MessageFailedToSendData})
 			return
 		}
 		response := uploadResp[0]
@@ -627,7 +628,8 @@ func (h Handler) NewUploadSingleHandler(c *gin.Context) {
 	} else if utils.IsVideo(mimeType) {
 		uploadResp, err = h.CommandHandler.HandleSendVideo(senderJidTypes, sliceJID, data, request.Caption)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed send data"})
+			log.Errorf("Failed to handle file upload : %v", err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": primitive.MessageFailedToSendData})
 			return
 		}
 		response := uploadResp[0]
@@ -636,7 +638,8 @@ func (h Handler) NewUploadSingleHandler(c *gin.Context) {
 	} else if utils.IsAudio(mimeType) {
 		uploadResp, err = h.CommandHandler.HandleSendAudio(senderJidTypes, sliceJID, data)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed send data"})
+			log.Errorf("Failed to handle file upload : %v", err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": primitive.MessageFailedToSend})
 			return
 		}
 		response := uploadResp[0]
@@ -645,11 +648,11 @@ func (h Handler) NewUploadSingleHandler(c *gin.Context) {
 	} else {
 		uploadResp, err = h.CommandHandler.HandleSendDocument(senderJidTypes, sliceJID, fileName, data, request.Caption)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "Failed send data"})
+			log.Errorf("Failed to handle file upload : %v", err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": primitive.MessageFailedToSendData})
 			return
 		}
-		response := uploadResp[0]
-		c.JSON(http.StatusOK, response)
+		c.JSON(http.StatusOK, gin.H{"message": primitive.MessageSuccessSent})
 		return
 	}
 }
@@ -671,7 +674,7 @@ func (h Handler) HandleQR(c *gin.Context) {
 	// Get query parameters
 	senderString := c.Query("sender")
 	if senderString == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "sender should be filled"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageSenderShouldBeFilled})
 		return
 	}
 	senderJidTypes := types.NewJID(senderString, types.DefaultUserServer)
@@ -684,7 +687,7 @@ func (h Handler) HandleQR(c *gin.Context) {
 			return
 		}
 		if base64qrcode == "" {
-			err = errors.New("you are already login")
+			err = errors.New(primitive.MessageAlreadyLoggedIn)
 			c.AbortWithStatusJSON(http.StatusOK, gin.H{"message": err.Error()})
 			return
 		}
@@ -700,7 +703,7 @@ func (h Handler) HandleQR(c *gin.Context) {
 			return
 		}
 		if base64qrcode == "" {
-			err = errors.New("you are already login")
+			err = errors.New(primitive.MessageAlreadyLoggedIn)
 			c.AbortWithStatusJSON(http.StatusOK, gin.H{"message": err.Error()})
 			return
 		}
@@ -713,7 +716,7 @@ func (h Handler) HandleConnect(c *gin.Context) {
 	// Get query parameters
 	senderString := c.Query("sender")
 	if senderString == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "sender should be filled"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageSenderShouldBeFilled})
 		return
 	}
 	senderJidTypes := types.NewJID(senderString, types.DefaultUserServer)
@@ -733,7 +736,7 @@ func (h Handler) HandleConnect(c *gin.Context) {
 func (h Handler) HandleConnectBulk(c *gin.Context) {
 	var request primitive.ConnectBulkDeviceRequest
 	if err := c.BindJSON(&request); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "Error decoding JSON"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageInvalidJson})
 		return
 	}
 
@@ -767,7 +770,7 @@ func (h Handler) HandleDisconnect(c *gin.Context) {
 	// Get query parameters
 	senderString := c.Query("sender")
 	if senderString == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "sender should be filled"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageSenderShouldBeFilled})
 		return
 	}
 	senderJidTypes := types.NewJID(senderString, types.DefaultUserServer)
@@ -787,7 +790,7 @@ func (h Handler) HandleDisconnect(c *gin.Context) {
 func (h Handler) HandleDisconnectBulk(c *gin.Context) {
 	var request primitive.DisconnectBulkDeviceRequest
 	if err := c.BindJSON(&request); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "Error decoding JSON"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageInvalidJson})
 		return
 	}
 
@@ -816,7 +819,7 @@ func (h Handler) HandlePairCode(c *gin.Context) {
 	// Get query parameters
 	senderString := c.Query("sender")
 	if senderString == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "sender should be filled"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageSenderShouldBeFilled})
 		return
 	}
 	senderJidTypes := types.NewJID(senderString, types.DefaultUserServer)
@@ -828,7 +831,7 @@ func (h Handler) HandlePairCode(c *gin.Context) {
 		return
 	}
 	if pairCode == "" {
-		err = errors.New("you are already login")
+		err = errors.New(primitive.MessageAlreadyLoggedIn)
 		c.JSON(http.StatusOK, gin.H{"message": err.Error()})
 		return
 	}
@@ -855,7 +858,7 @@ func (h Handler) HandleQRResponseJson(c *gin.Context) {
 	// Get query parameters
 	senderString := c.Query("sender")
 	if senderString == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "sender should be filled"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageSenderShouldBeFilled})
 		return
 	}
 	senderJidTypes := types.NewJID(senderString, types.DefaultUserServer)
@@ -868,7 +871,7 @@ func (h Handler) HandleQRResponseJson(c *gin.Context) {
 			return
 		}
 		if code == "" {
-			err = errors.New("you are already login")
+			err = errors.New(primitive.MessageAlreadyLoggedIn)
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": err.Error(), "data": ""})
 			return
 		}
@@ -884,7 +887,7 @@ func (h Handler) HandleQRResponseJson(c *gin.Context) {
 			return
 		}
 		if code == "" {
-			err = errors.New("you are already login")
+			err = errors.New(primitive.MessageAlreadyLoggedIn)
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": err.Error(), "data": ""})
 			return
 		}
@@ -903,7 +906,7 @@ func (h Handler) Logout(c *gin.Context) {
 	// Get query parameters
 	senderString := c.Query("sender")
 	if senderString == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "sender should be filled"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageSenderShouldBeFilled})
 		return
 	}
 	senderJidTypes := types.NewJID(senderString, types.DefaultUserServer)
@@ -929,14 +932,14 @@ func (h Handler) DeleteMessages(c *gin.Context) {
 	// Get query parameters
 	senderString := c.Query("sender")
 	if senderString == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "sender should be filled"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageSenderShouldBeFilled})
 		return
 	}
 	senderJidTypes := types.NewJID(senderString, types.DefaultUserServer)
 
 	clientSpecificUser, ok := commandhandler.LoadClientConcurrent(senderJidTypes.User)
 	if !ok || clientSpecificUser == nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "gagal kirim"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
@@ -946,13 +949,13 @@ func (h Handler) DeleteMessages(c *gin.Context) {
 	}
 
 	if !clientSpecificUser.IsLoggedIn() {
-		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": "gagal kirim, tolong hit endpoint untuk melakukan qrcode"})
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"message": primitive.MessageFailedToSend})
 		return
 	}
 
 	var request primitive.DeleteMessagesRequest
 	if err := c.BindJSON(&request); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "Error decoding JSON"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": primitive.MessageInvalidJson})
 		return
 	}
 
