@@ -1,0 +1,66 @@
+{{define "title"}}My Devices{{end}}
+
+{{define "content"}}
+<div class="px-4 py-8"> <!-- container and mx-auto removed to allow content to fill space next to sidebar -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">My Devices</h1>
+        <!-- Optional: Add New Device Button
+        <a href="/devices/new" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Add New Device
+        </a>
+        -->
+    </div>
+
+    {{if not .Devices}}
+    <div class="card">
+        <p class="text-gray-600">You have not added any devices yet.</p>
+        <!-- Optional: Link to add a new device e.g. <a href="/devices/new">Add one now!</a> -->
+    </div>
+    {{else}}
+    <div class="bg-white shadow-md rounded-lg overflow-x-auto"> <!-- Added overflow-x-auto for responsiveness -->
+        <table class="min-w-full leading-normal">
+            <thead>
+                <tr>
+                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Device ID
+                    </th>
+                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Device Name
+                    </th>
+                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Registered On
+                    </th>
+                    <!-- Optional: Actions column
+                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Actions
+                    </th>
+                    -->
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Devices}}
+                <tr>
+                    <td class="px-5 py-4 border-b border-gray-200 bg-white text-sm">
+                        <p class="text-gray-900 whitespace-no-wrap">{{.ID}}</p>
+                    </td>
+                    <td class="px-5 py-4 border-b border-gray-200 bg-white text-sm">
+                        <p class="text-gray-900 whitespace-no-wrap">{{.DeviceName}}</p>
+                    </td>
+                    <td class="px-5 py-4 border-b border-gray-200 bg-white text-sm">
+                        <!-- Using the formatDate function passed to the template -->
+                        <p class="text-gray-900 whitespace-no-wrap">{{ formatDate .CreatedAt }}</p>
+                    </td>
+                    <!-- Optional: Actions
+                    <td class="px-5 py-4 border-b border-gray-200 bg-white text-sm">
+                        <a href="/devices/edit/{{.ID}}" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
+                        <a href="/devices/delete/{{.ID}}" class="text-red-600 hover:text-red-900" onclick="return confirm('Are you sure?')">Delete</a>
+                    </td>
+                    -->
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{end}}
+</div>
+{{end}}

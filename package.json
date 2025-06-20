@@ -1,0 +1,25 @@
+{
+  "devDependencies": {
+    "tailwindcss": "^4.1.10"
+  },
+  "name": "app",
+  "version": "1.0.0",
+  "description": "--- This project is for engine whatsapp multi-session using library https://github.com/tulir/whatsmeow to use emulate whatsapp web.",
+  "main": "tailwind.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:css": "./node_modules/.bin/tailwindcss -i ./app/static/css/input.css -o ./app/static/css/output.css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/huzairuje/whatsapp_multi_session_with_proxy.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/huzairuje/whatsapp_multi_session_with_proxy/issues"
+  },
+  "homepage": "https://github.com/huzairuje/whatsapp_multi_session_with_proxy#readme"
+}

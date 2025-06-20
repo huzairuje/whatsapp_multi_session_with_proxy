@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{block "title" .}}{{if .PageTitle}}{{.PageTitle}}{{else}}Dashboard{{end}}{{end}}</title>
+    <link href="/static/css/output.css" rel="stylesheet"> <!-- Will be unstyled if Tailwind issue persists -->
+    <style>
+        /* Basic styling if Tailwind isn't working */
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #f0f2f5; color: #333; display: flex; flex-direction: column; min-height: 100vh; }
+        .navbar { background-color: #007bff; color: white; padding: 0.8rem 1.2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .navbar .app-title { font-size: 1.5rem; font-weight: bold; }
+        .navbar a { color: white; text-decoration: none; margin-left: 1rem; font-size: 0.9rem; }
+        .navbar a:hover { text-decoration: underline; opacity: 0.85; }
+        .navbar .user-info { font-size: 0.9rem; }
+
+        .main-layout { display: flex; flex-grow: 1; }
+        .sidebar { width: 220px; background-color: #ffffff; padding: 1.5rem; box-shadow: 2px 0 5px rgba(0,0,0,0.05); }
+        .sidebar h3 { font-size: 1.2rem; color: #007bff; margin-top: 0; margin-bottom: 1rem; }
+        .sidebar ul { list-style: none; padding: 0; }
+        .sidebar ul li { margin-bottom: 0.8rem; }
+        .sidebar ul li a { color: #333; text-decoration: none; font-size: 0.95rem; }
+        .sidebar ul li a:hover { color: #0056b3; text-decoration: underline; }
+
+        .content { flex-grow: 1; padding: 1.5rem; }
+        .container { padding: 1.5rem; max-width: 1200px; margin: 0 auto; /* Used if no sidebar */ }
+
+        .card { background-color: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 1.5rem; }
+        h1, h2, h3, h4 { color: #333; } /* More neutral heading colors */
+        h1 { font-size: 1.8rem; margin-bottom: 1rem; }
+        h2 { font-size: 1.5rem; margin-bottom: 0.8rem; }
+
+        footer { background-color: #e9ecef; color: #6c757d; text-align: center; padding: 1rem; border-top: 1px solid #dee2e6; margin-top: auto; }
+
+        /* Utility classes (very basic) */
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 1rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-8 { margin-top: 2rem; }
+        .p-4 { padding: 1rem; }
+        .text-center { text-align: center; }
+        .font-bold { font-weight: bold; }
+        .font-semibold { font-weight: 600; }
+        .text-sm { font-size: 0.875rem; }
+        .text-lg { font-size: 1.125rem; }
+        .text-xl { font-size: 1.25rem; }
+        .text-3xl { font-size: 1.875rem; }
+        .text-gray-600 { color: #6c757d; }
+        .text-gray-700 { color: #495057; }
+        .text-gray-800 { color: #343a40; }
+        .text-blue-500 { color: #007bff; }
+        .text-blue-600 { color: #0069d9; }
+        .text-blue-700 { color: #0056b3; }
+        .text-green-500 { color: #28a745; }
+        .text-green-600 { color: #218838; }
+        .hover\:underline:hover { text-decoration: underline; }
+        .hover\:text-blue-700:hover { color: #0056b3; }
+        .inline-block { display: inline-block; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="app-title">Dashboard App</a>
+        <div>
+            {{if .LoggedIn}}
+                <span class="user-info mr-4">Welcome, {{.Username}}</span>
+                <a href="/devices">Devices</a>
+                    <a href="/messages">Messages</a>
+                <a href="/settings">Settings</a>
+                <a href="/logout">Logout</a>
+            {{else}}
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            {{end}}
+        </div>
+    </nav>
+
+    <div class="main-layout">
+        {{if .LoggedIn}}
+        <aside class="sidebar">
+            <h3 class="font-semibold mb-3">Navigation</h3>
+            <ul>
+                <li class="mb-2"><a href="/">Dashboard</a></li>
+                <li class="mb-2"><a href="/devices">My Devices</a></li>
+                <li class="mb-2"><a href="/messages">My Messages</a></li>
+                <li class="mb-2"><a href="/settings">Settings</a></li>
+            </ul>
+        </aside>
+        {{end}}
+        <main class="{{if .LoggedIn}}content{{else}}container{{end}}">
+            {{block "content" .}}
+            <!-- Default content if not overridden by a specific page -->
+            <div class="card">
+                <h2>Welcome</h2>
+                <p>This is the default content area. Specific pages will override this block.</p>
+            </div>
+            {{end}}
+        </main>
+    </div>
+
+    <footer class="text-center p-4 mt-8 text-sm text-gray-600 border-t">
+        Dashboard App &copy; 2024
+    </footer>
+    <script src="https://unpkg.com/htmx.org@1.9.6/dist/htmx.min.js" integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55LCCcUBAYtGAeEGF9ImcvHOkAyn5t+" crossorigin="anonymous"></script>
+    {{block "scripts" .}}{{end}} <!-- Ensure this block exists for page-specific scripts -->
+</body>
+</html>

@@ -1,0 +1,13 @@
+{{/* This is a partial template for displaying messages */}}
+{{if .Message}}
+<div class="mb-4 p-3 rounded {{if .Error}}bg-red-100 text-red-700{{else}}bg-green-100 text-green-700{{end}}" id="message-content">
+    {{.Message}}
+</div>
+{{else}}
+<!-- HTMX expects some content to swap, so provide an empty div if there's no message.
+     Alternatively, use hx-swap="outerHTML" on the target and make sure the target always exists.
+     For innerHTML, if we return nothing, the old message might persist if not cleared by client-side means.
+     This ensures the content of #message-area is replaced.
+-->
+<div id="message-content"></div>
+{{end}}

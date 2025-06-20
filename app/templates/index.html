@@ -1,0 +1,28 @@
+{{define "title"}}{{if .PageTitle}}{{.PageTitle}}{{else}}Main Dashboard{{end}}{{end}}
+
+{{define "content"}}
+<div class="px-4 py-8"> <!-- Removed container and mx-auto as content area should fill space next to sidebar -->
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Main Dashboard</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="card">
+            <h2 class="text-xl font-semibold text-gray-700 mb-2">Device Overview</h2>
+            <p class="text-gray-600">You currently have <strong class="text-blue-600">{{.DeviceCount}}</strong> registered device(s).</p>
+            <a href="/devices" class="text-blue-500 hover:underline mt-4 inline-block">Manage Devices</a>
+        </div>
+
+        <div class="card">
+            <h2 class="text-xl font-semibold text-gray-700 mb-2">Message Summary</h2>
+            <p class="text-gray-600">Total messages recorded: <strong class="text-green-600">{{.MessageCount}}</strong>.</p>
+             <!-- <a href="/messages" class="text-green-500 hover:underline mt-4 inline-block">View Messages</a> -->
+        </div>
+    </div>
+
+    <!-- Placeholder for more dashboard widgets -->
+    <div class="mt-8 card">
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">Quick Actions</h2>
+        <p class="text-gray-600">Perform common tasks quickly.</p>
+        <!-- Example: <a href="/devices/new" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2 inline-block">Add New Device</a> -->
+    </div>
+</div>
+{{end}}
