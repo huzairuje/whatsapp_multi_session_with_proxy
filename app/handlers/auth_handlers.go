@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/gin-gonic/gin" // Added Gin import
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -30,21 +31,21 @@ func InitAuthTemplates() {
 	// Parse main templates (register.html, login.html)
 	// These are standalone pages and don't use layout.html
 	// They have their own internal message display logic for non-HTMX GET requests.
-	// Adjusted paths for tests run from app/handlers/ directory.
+	// Paths should be relative to project root for main.go execution.
 	var err error
-	registerTmpl, err = template.ParseFiles("../templates/register.html")
+	registerTmpl, err = template.ParseFiles("app/templates/register.html")
 	if err != nil {
 		log.Fatalf("Error parsing register.html: %v", err)
 	}
 
-	loginTmpl, err = template.ParseFiles("../templates/login.html")
+	loginTmpl, err = template.ParseFiles("app/templates/login.html")
 	if err != nil {
 		log.Fatalf("Error parsing login.html: %v", err)
 	}
 
 	// Parse the message partial separately for HTMX responses
 	// This partial is defined in app/templates/_messages.html
-	authMessagePartialTmpl, err = template.ParseFiles("../templates/_messages.html")
+	authMessagePartialTmpl, err = template.ParseFiles("app/templates/_messages.html")
 	if err != nil {
 		log.Fatalf("Error parsing auth message partial template (_messages.html): %v", err)
 	}
@@ -188,6 +189,36 @@ func HandleRegistration(w http.ResponseWriter, r *http.Request) {
 	renderAuthResponse(w, r, registerTmpl, responseData)
 }
 
+// --- Gin Handlers (Placeholders) ---
+
+func ShowRegistrationPageGin(c *gin.Context) {
+	log.Println("GIN HANDLER: ShowRegistrationPageGin called")
+	// Old logic: err := registerTmpl.Execute(c.Writer, data)
+	// New logic (eventually): c.HTML(http.StatusOK, "register.html", gin.H{"Username": "", "Message": "", "Error": false})
+	c.String(http.StatusOK, "Placeholder for Gin ShowRegistrationPage")
+}
+
+func HandleRegistrationGin(c *gin.Context) {
+	log.Println("GIN HANDLER: HandleRegistrationGin called")
+	c.String(http.StatusOK, "Placeholder for Gin HandleRegistration")
+}
+
+func ShowLoginPageGin(c *gin.Context) {
+	log.Println("GIN HANDLER: ShowLoginPageGin called")
+	c.String(http.StatusOK, "Placeholder for Gin ShowLoginPage")
+}
+
+func HandleLoginGin(c *gin.Context) {
+	log.Println("GIN HANDLER: HandleLoginGin called")
+	c.String(http.StatusOK, "Placeholder for Gin HandleLogin")
+}
+
+func LogoutHandlerGin(c *gin.Context) {
+	log.Println("GIN HANDLER: LogoutHandlerGin called")
+	c.String(http.StatusOK, "Placeholder for Gin LogoutHandler")
+}
+
+
 // ShowLoginPage serves the login form
 func ShowLoginPage(w http.ResponseWriter, r *http.Request) {
     session, _ := sessions.Store.Get(r, sessions.SessionKey)
@@ -280,6 +311,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	    http.Redirect(w, r, "/", http.StatusFound)
     }
 }
+
 
 // LogoutHandler clears the session
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {

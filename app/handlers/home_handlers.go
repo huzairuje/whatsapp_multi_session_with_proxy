@@ -7,10 +7,17 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gin-gonic/gin" // Added Gin import
 	"gorm.io/gorm" // Added for gorm.ErrRecordNotFound
 )
 
 var dashboardTmpl *template.Template
+
+// --- Gin Handlers (Placeholders) ---
+func HomeHandlerGin(c *gin.Context) {
+	log.Println("GIN HANDLER: HomeHandlerGin called")
+	c.String(http.StatusOK, "Placeholder for Gin HomeHandler")
+}
 
 // InitDashboardTemplates pre-parses the dashboard templates.
 func InitDashboardTemplates() {
@@ -20,8 +27,8 @@ func InitDashboardTemplates() {
 	// The first file name becomes the name of the template if not otherwise specified by {{define "name"}}
 	// It's often better to parse them into a map or use template.Must for clarity if templates are named.
 	// For this setup, layout.html will be the entry point.
-    // Adjusted paths for tests run from app/handlers/ directory.
-	tpl, err := template.ParseFiles("../templates/layout.html", "../templates/index.html")
+    // Paths should be relative to project root for main.go execution.
+	tpl, err := template.ParseFiles("app/templates/layout.html", "app/templates/index.html")
 	if err != nil {
 		log.Fatalf("Error parsing dashboard templates: %v", err)
 	}

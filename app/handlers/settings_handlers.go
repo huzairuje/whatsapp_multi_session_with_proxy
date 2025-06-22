@@ -8,11 +8,23 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin" // Added Gin import
 	"golang.org/x/crypto/bcrypt"
 )
 
 var settingsTmpl *template.Template
 var messagePartialTmpl *template.Template // For HTMX responses
+
+// --- Gin Handlers (Placeholders) ---
+func SettingsPageGETGin(c *gin.Context) {
+	log.Println("GIN HANDLER: SettingsPageGETGin called")
+	c.String(http.StatusOK, "Placeholder for Gin SettingsPageGET")
+}
+
+func HandleChangePasswordGin(c *gin.Context) {
+	log.Println("GIN HANDLER: HandleChangePasswordGin called")
+	c.String(http.StatusOK, "Placeholder for Gin HandleChangePassword")
+}
 
 // SettingsPageData remains the same
 type SettingsPageData struct {
@@ -36,7 +48,7 @@ func InitSettingsTemplates() {
 			}
 			return t.Format("Jan 02, 2006") // Or any other consistent format
 		},
-	}).ParseFiles("../templates/layout.html", "../templates/settings.html", "../templates/_messages.html") // Adjusted paths
+	}).ParseFiles("app/templates/layout.html", "app/templates/settings.html", "app/templates/_messages.html") // Reverted paths
 	if err != nil {
 		log.Fatalf("Error parsing main settings templates (including _messages.html): %v", err)
 	}
@@ -44,7 +56,7 @@ func InitSettingsTemplates() {
 
 	// Standalone partial template for HTMX message updates
 	// The name of the template defined by ParseFiles is the base name of the file.
-	partialTpl, err := template.ParseFiles("../templates/_messages.html") // Adjusted path
+	partialTpl, err := template.ParseFiles("app/templates/_messages.html") // Reverted path
 	if err != nil {
 		log.Fatalf("Error parsing message partial template: %v", err)
 	}

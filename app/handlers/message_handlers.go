@@ -8,10 +8,17 @@ import (
 	"net/http"
 	"time" // For date formatting in template
 
+	"github.com/gin-gonic/gin" // Added Gin import
 	"gorm.io/gorm" // For gorm.ErrRecordNotFound
 )
 
 var messagesTmpl *template.Template
+
+// --- Gin Handlers (Placeholders) ---
+func ShowMessagesPageGin(c *gin.Context) {
+	log.Println("GIN HANDLER: ShowMessagesPageGin called")
+	c.String(http.StatusOK, "Placeholder for Gin ShowMessagesPage")
+}
 
 // MessagePageData holds data for the messages page
 type MessagePageData struct {
@@ -32,7 +39,7 @@ func InitMessageTemplates() {
 			}
 			return t.Format("Jan 02, 2006 03:04 PM")
 		},
-	}).ParseFiles("../templates/layout.html", "../templates/messages.html") // Adjusted paths
+	}).ParseFiles("app/templates/layout.html", "app/templates/messages.html") // Reverted paths
 	if err != nil {
 		log.Fatalf("Error parsing message templates: %v", err)
 	}

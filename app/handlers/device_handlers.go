@@ -7,9 +7,17 @@ import (
 	"log"
 	"net/http"
 	"time" // For CreatedAt formatting
+
+	"github.com/gin-gonic/gin" // Added Gin import
 )
 
 var devicesTmpl *template.Template
+
+// --- Gin Handlers (Placeholders) ---
+func ShowDevicesPageGin(c *gin.Context) {
+	log.Println("GIN HANDLER: ShowDevicesPageGin called")
+	c.String(http.StatusOK, "Placeholder for Gin ShowDevicesPage")
+}
 
 // DevicePageData holds data for the devices page
 type DevicePageData struct {
@@ -35,7 +43,7 @@ func InitDeviceTemplates() {
 			}
 			return t.Format("Jan 02, 2006 03:04 PM")
 		},
-	}).ParseFiles("../templates/layout.html", "../templates/devices.html") // Adjusted paths
+	}).ParseFiles("app/templates/layout.html", "app/templates/devices.html") // Reverted paths
 	if err != nil {
 		log.Fatalf("Error parsing device templates: %v", err)
 	}
