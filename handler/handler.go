@@ -681,7 +681,7 @@ func (h Handler) HandleQR(c *gin.Context) {
 
 	if len(devices) > 0 {
 		// Get specific QR code
-		base64qrcode, err := h.CommandHandler.HandleGetSpecificQR(c.Request.Context(), senderJidTypes)
+		base64qrcode, err := h.CommandHandler.HandleGetSpecificQR(senderJidTypes)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
@@ -697,7 +697,7 @@ func (h Handler) HandleQR(c *gin.Context) {
 
 	} else {
 		// Get specific QR code
-		base64qrcode, err := h.CommandHandler.HandleGetSingleQR(c.Request.Context(), senderJidTypes)
+		base64qrcode, err := h.CommandHandler.HandleGetSingleQR(senderJidTypes)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
@@ -881,7 +881,7 @@ func (h Handler) HandleQRResponseJson(c *gin.Context) {
 
 	} else {
 		// Get specific QR code
-		code, err := h.CommandHandler.HandleGetSingleQRResponseCode(c.Request.Context(), senderJidTypes)
+		code, err := h.CommandHandler.HandleGetSingleQRResponseCode(senderJidTypes)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return

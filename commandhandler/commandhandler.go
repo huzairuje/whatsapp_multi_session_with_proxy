@@ -382,8 +382,9 @@ func (ch CommandHandler) HandleSendTextMessageBulk(sender types.JID, textMsg str
 	log.Println("Bulk message sending completed")
 }
 
-func (ch CommandHandler) HandleGetSingleQR(ctx context.Context, senderJidTypes types.JID) (string, error) {
-	device, err := ch.Container.GetFirstDevice(ctx)
+func (ch CommandHandler) HandleGetSingleQR(senderJidTypes types.JID) (string, error) {
+	qrCtx := context.WithoutCancel(context.Background())
+	device, err := ch.Container.GetFirstDevice(qrCtx)
 	if err != nil {
 		return "", err
 	}
@@ -402,7 +403,7 @@ func (ch CommandHandler) HandleGetSingleQR(ctx context.Context, senderJidTypes t
 
 	// Connect the client synchronously
 	if client.Store.ID == nil {
-		qrChan, errGetQRChannel := client.GetQRChannel(ctx)
+		qrChan, errGetQRChannel := client.GetQRChannel(qrCtx)
 		if errGetQRChannel != nil {
 			return "", errGetQRChannel
 		}
@@ -439,8 +440,9 @@ func (ch CommandHandler) HandleGetSingleQR(ctx context.Context, senderJidTypes t
 	return "", nil
 }
 
-func (ch CommandHandler) HandleGetSpecificQR(ctx context.Context, jid types.JID) (string, error) {
-	devices, err := ch.Container.GetAllDevices(ctx)
+func (ch CommandHandler) HandleGetSpecificQR(jid types.JID) (string, error) {
+	qrCtx := context.WithoutCancel(context.Background())
+	devices, err := ch.Container.GetAllDevices(qrCtx)
 	if err != nil {
 		return "", err
 	}
@@ -474,7 +476,7 @@ func (ch CommandHandler) HandleGetSpecificQR(ctx context.Context, jid types.JID)
 
 	// Connect the client synchronously
 	if client.Store.ID == nil {
-		qrChan, errGetQr := client.GetQRChannel(ctx)
+		qrChan, errGetQr := client.GetQRChannel(qrCtx)
 		if errGetQr != nil {
 			return "", errGetQr
 		}
@@ -507,8 +509,9 @@ func (ch CommandHandler) HandleGetSpecificQR(ctx context.Context, jid types.JID)
 	return "", nil
 }
 
-func (ch CommandHandler) HandleGetSingleQRResponseCode(ctx context.Context, senderJidTypes types.JID) (string, error) {
-	device, err := ch.Container.GetFirstDevice(ctx)
+func (ch CommandHandler) HandleGetSingleQRResponseCode(senderJidTypes types.JID) (string, error) {
+	qrCtx := context.WithoutCancel(context.Background())
+	device, err := ch.Container.GetFirstDevice(qrCtx)
 	if err != nil {
 		return "", err
 	}
@@ -527,7 +530,7 @@ func (ch CommandHandler) HandleGetSingleQRResponseCode(ctx context.Context, send
 
 	// Connect the client synchronously
 	if client.Store.ID == nil {
-		qrChan, errQRChannel := client.GetQRChannel(ctx)
+		qrChan, errQRChannel := client.GetQRChannel(qrCtx)
 		if errQRChannel != nil {
 			return "", errQRChannel
 		}
