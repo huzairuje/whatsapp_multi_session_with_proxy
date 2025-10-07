@@ -1,8 +1,8 @@
 module whatsapp_multi_session
 
-go 1.23.0
+go 1.24.0
 
-toolchain go1.23.2
+toolchain go1.24.6
 
 require (
 	github.com/gin-gonic/gin v1.10.0
@@ -10,13 +10,13 @@ require (
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/gookit/event v1.1.2
 	github.com/lib/pq v1.10.9
-	github.com/mattn/go-sqlite3 v1.14.28
+	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/mdp/qrterminal/v3 v3.2.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spf13/viper v1.19.0
-	go.mau.fi/whatsmeow v0.0.0-20250617170509-947866bb9f75
-	google.golang.org/protobuf v1.36.6
+	go.mau.fi/whatsmeow v0.0.0-20251005115322-65f6143fa407
+	google.golang.org/protobuf v1.36.10
 )
 
 require (
@@ -27,12 +27,14 @@ require (
 	cloud.google.com/go/longrunning v0.5.5 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
+	github.com/beeper/argo-go v1.1.2 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
+	github.com/elliotchance/orderedmap/v3 v3.1.0 // indirect
 	github.com/fatih/color v1.14.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
@@ -78,7 +80,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.34.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
-	github.com/petermattis/goid v0.0.0-20250508124226-395b08cebbdb // indirect
+	github.com/petermattis/goid v0.0.0-20250904145737-900bdf8bb490 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/sagikazarmark/crypt v0.19.0 // indirect
@@ -91,12 +93,13 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.27 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.12 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.12 // indirect
 	go.etcd.io/etcd/client/v2 v2.305.12 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.12 // indirect
-	go.mau.fi/libsignal v0.2.0 // indirect
-	go.mau.fi/util v0.8.8 // indirect
+	go.mau.fi/libsignal v0.2.1-0.20251004173110-6e0a3f2435ed // indirect
+	go.mau.fi/util v0.9.2-0.20251005111801-c13b66219cee // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0 // indirect
@@ -107,14 +110,14 @@ require (
 	go.uber.org/multierr v1.9.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect
-	golang.org/x/crypto v0.39.0 // indirect
-	golang.org/x/exp v0.0.0-20250606033433-dcc06ee1d476 // indirect
-	golang.org/x/net v0.41.0 // indirect
+	golang.org/x/crypto v0.42.0 // indirect
+	golang.org/x/exp v0.0.0-20250911091902-df9299821621 // indirect
+	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
-	golang.org/x/sync v0.15.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/term v0.32.0 // indirect
-	golang.org/x/text v0.26.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/term v0.35.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/api v0.171.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect

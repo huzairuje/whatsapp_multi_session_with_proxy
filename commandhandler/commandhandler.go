@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"os"
@@ -319,12 +320,19 @@ func (ch CommandHandler) HandleSendTextMessageBulk(sender types.JID, textMsg str
 	errCh := make(chan error, len(jids)) // Buffered channel for errors
 	var wg sync.WaitGroup
 
+	// modern random API (Go 1.22+)
+	rng := rand.New(rand.NewPCG(uint64(time.Now().UnixNano()), uint64(time.Now().UnixNano()<<1)))
+
 	for _, jid := range jids {
 		// Increment the WaitGroup counter for each goroutine
 		wg.Add(1)
 
 		go func(jid string) {
 			defer wg.Done() // Ensure the WaitGroup counter is decremented
+
+			// add random delay between 100ms–2000ms before sending
+			delay := time.Duration(rng.IntN(1901)+100) * time.Millisecond
+			time.Sleep(delay)
 
 			client, ok := LoadClientConcurrent(sender.User)
 			if !ok || client == nil {
@@ -1249,10 +1257,17 @@ func (ch CommandHandler) handleSendMedia(sender types.JID, JIDS []string, data [
 	var sliceM []primitive.Message
 	var errs []error
 
+	// modern random API (Go 1.22+)
+	rng := rand.New(rand.NewPCG(uint64(time.Now().UnixNano()), uint64(time.Now().UnixNano()<<1)))
+
 	for _, jid := range JIDS {
 		wg.Add(1)
 		go func(jid string) {
 			defer wg.Done()
+
+			// add random delay between 100ms–2000ms (2 seconds)
+			delay := time.Duration(rng.IntN(1901)+100) * time.Millisecond
+			time.Sleep(delay)
 
 			recipient, ok := utils.ParseJID(jid)
 			if !ok {
@@ -1264,7 +1279,7 @@ func (ch CommandHandler) handleSendMedia(sender types.JID, JIDS []string, data [
 
 			client, ok := LoadClientConcurrent(sender.User)
 			if !ok || client == nil {
-				log.Errorf("Client not found for user: %v", sender.User)
+				log.Printf("Client not found for user: %v", sender.User)
 				return
 			}
 
@@ -1279,14 +1294,20 @@ func (ch CommandHandler) handleSendMedia(sender types.JID, JIDS []string, data [
 			messageID := client.GenerateMessageID()
 
 			var msg waE2E.Message
-			if mediaCategory == primitive.MediaImage {
+			switch mediaCategory {
+			case primitive.MediaImage:
 				msg = ch.createImageMessage(uploaded, data, captionMsg)
-			} else if mediaCategory == primitive.MediaDocument {
+			case primitive.MediaDocument:
 				msg = ch.createDocumentMessage(fileName, uploaded, data, captionMsg)
-			} else if mediaCategory == primitive.MediaVideo {
+			case primitive.MediaVideo:
 				msg = ch.createVideoMessage(uploaded, data, captionMsg)
-			} else if mediaCategory == primitive.MediaAudio {
+			case primitive.MediaAudio:
 				msg = ch.createAudioMessage(uploaded, data)
+			default:
+				mu.Lock()
+				errs = append(errs, fmt.Errorf("unsupported media category: %s", mediaCategory))
+				mu.Unlock()
+				return
 			}
 
 			resp, err := client.SendMessage(context.Background(), recipient, &msg, whatsmeow.SendRequestExtra{ID: messageID})
@@ -1299,27 +1320,18 @@ func (ch CommandHandler) handleSendMedia(sender types.JID, JIDS []string, data [
 
 			err = client.MarkRead([]types.MessageID{resp.ID}, time.Now(), recipient, sender)
 			if err != nil {
-				log.Errorf("Error marking message as read: %v", err)
+				log.Printf("Error marking message as read: %v", err)
 			}
 
-			if config.Conf.DeleteAfterSend.Enable {
-				_, err := client.SendMessage(context.Background(), recipient, client.BuildRevoke(recipient, types.EmptyJID, messageID))
-				if err != nil {
-					log.Errorf("Error revoking message: %v", err)
-				}
-			}
-
-			// add message to slice
-			msgResponse := primitive.Message{
+			mu.Lock()
+			sliceM = append(sliceM, primitive.Message{
 				MessageID: resp.ID,
 				Jid:       recipient.String(),
 				Type:      mediaCategory,
 				Body:      captionMsg,
 				Sent:      true,
 				FileName:  fileName,
-			}
-			mu.Lock()
-			sliceM = append(sliceM, msgResponse)
+			})
 			mu.Unlock()
 		}(jid)
 	}
