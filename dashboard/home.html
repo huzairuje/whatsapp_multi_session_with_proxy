@@ -1,0 +1,15 @@
+{{define "content"}}
+<h1>Welcome to the Dashboard</h1>
+
+<div id="sent-messages" hx-get="/dashboard/api/sent-messages" hx-trigger="load" hx-swap="innerHTML">
+    <p>Loading sent messages...</p>
+</div>
+
+<div id="device-count" hx-get="/dashboard/api/device-count" hx-trigger="load" hx-swap="innerHTML">
+    <p>Loading device count...</p>
+</div>
+
+<div id="message-graphic" hx-get="/dashboard/api/message-graphic" hx-trigger="load" hx-swap="innerHTML">
+    <p>Loading message graphic...</p>
+</div>
+{{end}}

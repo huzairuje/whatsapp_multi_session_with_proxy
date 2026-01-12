@@ -45,5 +45,37 @@ func (r Router) V1(router *gin.Engine) *gin.Engine {
 	router.DELETE("/message", r.Handler.DeleteMessages)
 	router.GET("/health-check", r.Handler.HandleHealthCheck)
 
+	// Dashboard routes
+	// Redirect /dashboard to /dashboard/login
+	router.GET("/dashboard", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/dashboard/login")
+	})
+	// Login page (GET and POST)
+	router.GET("/dashboard/login", r.Handler.ServeLoginPage())
+	router.POST("/dashboard/login", r.Handler.ServeLoginPage())
+
+	// Authenticated dashboard group
+	dashboardAuthGroup := router.Group("/dashboard").Use(handler.AuthMiddleware())
+	{
+		// Dashboard home page
+		dashboardAuthGroup.GET("/home", r.Handler.ServeHomePage())
+		// Dashboard content pages (for HTMX partials that require Go templating/logic)
+		dashboardAuthGroup.GET("/page/:page", r.Handler.ServeDashboardContent())
+		// API routes for dashboard data (HTMX targets)
+		dashboardAuthGroup.GET("/api/sent-messages", r.Handler.GetSentMessages())
+		dashboardAuthGroup.GET("/api/device-count", r.Handler.GetDeviceCount())
+		dashboardAuthGroup.GET("/api/message-graphic", r.Handler.GetMessageCountGraphic())
+		dashboardAuthGroup.GET("/api/active-senders", r.Handler.GetActiveSenders())
+		dashboardAuthGroup.POST("/api/send-message", r.Handler.HandleDashboardSendMessage()) // New route for sending messages
+	}
+
+	// Serve static HTML files for dashboard partials like messages.html, devices.html etc.
+	// These are requested by hx-get attributes in base.html's navigation.
+	// These are kept outside the auth group as they are static assets.
+	// The handlers that render base.html (which then loads these) ARE protected.
+	// If direct access to these partials also needs protection, StaticFS would need a more complex setup.
+	router.StaticFS("/dashboard", http.Dir("dashboard"))
+
+
 	return router
 }
