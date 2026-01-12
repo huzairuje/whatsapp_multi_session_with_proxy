@@ -30,3 +30,7 @@ postgres:
   schema: public
   user: postgres
   enablePostgres: true
+
+dashboard:
+  jwt_secret_key: "prod-your-super-secure-and-long-jwt-secret-key-please-change" # Change this for production!
+  otp_sender_jid: "prod-1234567890@s.whatsapp.net" # Replace with the actual JID for production
