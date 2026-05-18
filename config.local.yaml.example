@@ -22,6 +22,26 @@ cronjob:
     cronJobSchedule: "0 0 * * 0"
 deleteAfterSend:
   enable: false
+bulkSend:
+  minDelay: 15000          # minimum delay between messages in ms (15s)
+  maxDelay: 45000          # maximum delay between messages in ms (45s)
+  batchSize: 10            # messages per batch before taking a longer pause
+  batchPauseMin: 300       # minimum batch pause in seconds (5 min)
+  batchPauseMax: 600       # maximum batch pause in seconds (10 min)
+  dailyLimit: 50           # max messages per sender per day
+  typingDelayMin: 2000     # min "composing" presence duration in ms
+  typingDelayMax: 5000     # max "composing" presence duration in ms
+  enablePresenceSimulation: true  # send "composing" before each message
+  # NEW ANTI-BAN FEATURES:
+  allowedHourStart: 8      # earliest hour to send (0-23, default: 8 AM)
+  allowedHourEnd: 22       # latest hour to send (0-23, default: 10 PM)
+  timezone: "Local"        # timezone for time restrictions (e.g., "Asia/Jakarta")
+  enableTimeRestrictions: true  # enable time-of-day restrictions
+  errorBackoffMinutes: 30  # pause duration after rate limit error (minutes)
+  enableRecipientValidation: true  # validate recipients before sending
+  validationCacheDuration: 24  # cache validation results (hours)
+  enableHealthCheck: true  # check session health before bulk send
+  maxErrorRate: 0.3        # max acceptable error rate (0.0-1.0, 30%)
 postgres:
   dbName: coba_baru_whatsapp
   host: localhost
