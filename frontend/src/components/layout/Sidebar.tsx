@@ -8,6 +8,8 @@ import {
   Settings,
   Activity,
   MessageSquare,
+  TrendingUp,
+  UserCircle,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 
@@ -17,6 +19,8 @@ const navigation = [
   { name: 'Messages', href: '/messages', icon: MessageSquare },
   { name: 'Bulk Send', href: '/bulk-send', icon: Send },
   { name: 'Recipients', href: '/recipients', icon: Users },
+  { name: 'Contacts', href: '/contacts', icon: UserCircle },
+  { name: 'Warm-up', href: '/warmup', icon: TrendingUp },
   { name: 'Activities', href: '/activities', icon: Activity },
   { name: 'Templates', href: '/templates', icon: FileText },
   { name: 'Settings', href: '/settings', icon: Settings },

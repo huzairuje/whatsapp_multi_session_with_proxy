@@ -6,9 +6,11 @@ type SendTextSingleRequest struct {
 }
 
 type SendTextBulkRequest struct {
-	Recipients []string          `json:"recipients" validate:"required"`
-	Message    string            `json:"message" validate:"required"`
-	Variables  map[string]string `json:"variables,omitempty"`
+	Recipients      []string          `json:"recipients" validate:"required"`
+	Message         string            `json:"message"`
+	Variables       map[string]string `json:"variables,omitempty"`
+	TemplateID      *int              `json:"template_id,omitempty"`
+	UseContactInfo  bool              `json:"use_contact_info"`
 }
 
 type CheckUserSingleRequest struct {

@@ -8,6 +8,7 @@ import (
 	"whatsapp_multi_session/auth"
 	"whatsapp_multi_session/commandhandler"
 	"whatsapp_multi_session/config"
+	"whatsapp_multi_session/contacts"
 	"whatsapp_multi_session/cronjob"
 	"whatsapp_multi_session/database"
 	"whatsapp_multi_session/handler"
@@ -15,6 +16,11 @@ import (
 	"whatsapp_multi_session/message"
 	"whatsapp_multi_session/proxy"
 	"whatsapp_multi_session/routers"
+	"whatsapp_multi_session/scheduler"
+	"whatsapp_multi_session/template"
+	"whatsapp_multi_session/validator"
+	"whatsapp_multi_session/warmup"
+	"whatsapp_multi_session/worker"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -78,15 +84,46 @@ func Setup(r *gin.Engine) *gin.Engine {
 		panic(err)
 	}
 
+	// Initialize warm-up service
+	warmUpService, err := warmup.NewService(rawDB.(*sql.DB), isPostgres)
+	if err != nil {
+		log.Errorf("error initializing warmup service: %v", err)
+		panic(err)
+	}
+
+	// Initialize template service
+	templateService, err := template.NewService(rawDB.(*sql.DB), isPostgres)
+	if err != nil {
+		log.Errorf("error initializing template service: %v", err)
+		panic(err)
+	}
+
+	// Initialize scheduler service
+	schedulerService, err := scheduler.NewService(rawDB.(*sql.DB), isPostgres)
+	if err != nil {
+		log.Errorf("error initializing scheduler service: %v", err)
+		panic(err)
+	}
+
+	// Initialize contacts service
+	contactsService, err := contacts.NewService(rawDB.(*sql.DB), isPostgres)
+	if err != nil {
+		log.Errorf("error initializing contacts service: %v", err)
+		panic(err)
+	}
+
+	// Initialize validator
+	v := validator.NewValidator()
+
 	// load proxy list
 	proxyManager := proxy.NewManager()
-	err := proxyManager.LoadFromFile(config.Conf.Proxy.Directory)
+	err = proxyManager.LoadFromFile(config.Conf.Proxy.Directory)
 	if err != nil {
 		log.Fatal("Error loading proxy list:", err)
 	}
 
 	//initiate command handler here
-	cmdHandler := commandhandler.NewCommandHandler(connDb, proxyManager, messageService)
+	cmdHandler := commandhandler.NewCommandHandler(connDb, proxyManager, messageService, warmUpService, templateService, schedulerService, contactsService, v)
 
 	listen := listener.NewListener(cmdHandler)
 	go func() {
@@ -107,6 +144,11 @@ func Setup(r *gin.Engine) *gin.Engine {
 		cronJobs.Run()
 		fmt.Println("cronJobs.Run() is successfully initiated")
 	}()
+
+	// Initialize and start scheduler worker
+	schedulerWorker := worker.NewSchedulerWorker(schedulerService, warmUpService)
+	schedulerWorker.Start()
+	log.Info("[Boot] Scheduler worker started - processing scheduled bulk sends")
 
 	return appRoutes
 }

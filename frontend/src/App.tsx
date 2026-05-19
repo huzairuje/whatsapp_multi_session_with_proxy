@@ -8,6 +8,8 @@ import Recipients from './pages/Recipients'
 import Templates from './pages/Templates'
 import Settings from './pages/Settings'
 import Activities from './pages/Activities'
+import WarmUp from './pages/WarmUp'
+import Contacts from './pages/Contacts'
 import Login from './pages/Login'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
@@ -31,6 +33,8 @@ function App() {
           <Route path="bulk-send" element={<BulkSend />} />
           <Route path="recipients" element={<Recipients />} />
           <Route path="templates" element={<Templates />} />
+          <Route path="warmup" element={<WarmUp />} />
+          <Route path="contacts" element={<Contacts />} />
           <Route path="settings" element={<Settings />} />
           <Route path="activities" element={<Activities />} />
         </Route>

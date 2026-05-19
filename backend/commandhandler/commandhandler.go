@@ -15,10 +15,15 @@ import (
 
 	"whatsapp_multi_session/bulksender"
 	"whatsapp_multi_session/config"
+	"whatsapp_multi_session/contacts"
 	"whatsapp_multi_session/message"
 	"whatsapp_multi_session/primitive"
 	"whatsapp_multi_session/proxy"
+	"whatsapp_multi_session/scheduler"
+	"whatsapp_multi_session/template"
 	"whatsapp_multi_session/utils"
+	"whatsapp_multi_session/validator"
+	"whatsapp_multi_session/warmup"
 
 	"github.com/mdp/qrterminal/v3"
 	log "github.com/sirupsen/logrus"
@@ -36,16 +41,26 @@ var (
 )
 
 type CommandHandler struct {
-	Container      *sqlstore.Container
-	ProxyManager   *proxy.Manager
-	MessageService *message.Service
+	Container        *sqlstore.Container
+	ProxyManager     *proxy.Manager
+	MessageService   *message.Service
+	WarmUpService    *warmup.Service
+	TemplateService  *template.Service
+	SchedulerService *scheduler.Service
+	ContactsService  *contacts.Service
+	Validator        *validator.Validator
 }
 
-func NewCommandHandler(container *sqlstore.Container, proxyManager *proxy.Manager, messageService *message.Service) CommandHandler {
+func NewCommandHandler(container *sqlstore.Container, proxyManager *proxy.Manager, messageService *message.Service, warmUpService *warmup.Service, templateService *template.Service, schedulerService *scheduler.Service, contactsService *contacts.Service, v *validator.Validator) CommandHandler {
 	return CommandHandler{
-		Container:      container,
-		ProxyManager:   proxyManager,
-		MessageService: messageService,
+		Container:        container,
+		ProxyManager:     proxyManager,
+		MessageService:   messageService,
+		WarmUpService:    warmUpService,
+		TemplateService:  templateService,
+		SchedulerService: schedulerService,
+		ContactsService:  contactsService,
+		Validator:        v,
 	}
 }
 
@@ -382,7 +397,7 @@ func (ch CommandHandler) HandleSendTextMessageBulk(sender types.JID, textMsg str
 
 	// Use the sequential anti-ban bulk sender
 	ctx := context.Background()
-	results := bulksender.SendBulkSequential(ctx, client, sender, validRecipients, textMsg, variables, utils.ParseJID)
+	results := bulksender.SendBulkSequential(ctx, client, sender, validRecipients, textMsg, variables, utils.ParseJID, ch.WarmUpService)
 
 	// Record messages to database
 	if ch.MessageService != nil {

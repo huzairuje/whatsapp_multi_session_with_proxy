@@ -227,10 +227,35 @@ func (r *Repository) GetStats() (*ActivityStats, error) {
 	// Recent activities
 	stats.RecentActivities, _ = r.GetRecentActivities(10)
 
-	// Specific counts
+	// Get message stats from messages table instead of activities table
+	var messagesSentQuery string
+	if r.isPostgres {
+		messagesSentQuery = `SELECT COUNT(*) FROM messages WHERE status IN ('sent', 'delivered', 'read')`
+	} else {
+		messagesSentQuery = `SELECT COUNT(*) FROM messages WHERE status IN ('sent', 'delivered', 'read')`
+	}
+	var messagesSent int64
+	err = r.db.QueryRow(messagesSentQuery).Scan(&messagesSent)
+	if err != nil && err != sql.ErrNoRows {
+		messagesSent = 0
+	}
+	stats.MessagesSent = messagesSent
+
+	var messagesFailedQuery string
+	if r.isPostgres {
+		messagesFailedQuery = `SELECT COUNT(*) FROM messages WHERE status = 'failed'`
+	} else {
+		messagesFailedQuery = `SELECT COUNT(*) FROM messages WHERE status = 'failed'`
+	}
+	var messagesFailed int64
+	err = r.db.QueryRow(messagesFailedQuery).Scan(&messagesFailed)
+	if err != nil && err != sql.ErrNoRows {
+		messagesFailed = 0
+	}
+	stats.MessagesFailed = messagesFailed
+
+	// Specific counts from activities
 	stats.SessionsConnected = stats.ActivitiesByType[string(TypeSessionConnect)]
-	stats.MessagesSent = stats.ActivitiesByType[string(TypeMessageSent)]
-	stats.MessagesFailed = stats.ActivitiesByType[string(TypeMessageFailed)]
 	stats.RateLimitEvents = stats.ActivitiesByType[string(TypeRateLimit)]
 
 	return stats, nil

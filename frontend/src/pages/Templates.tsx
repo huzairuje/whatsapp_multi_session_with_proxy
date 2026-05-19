@@ -1,82 +1,161 @@
-import { useState } from 'react'
-import { Plus, Edit, Trash2, Copy, FileText } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, Trash2, Edit2, Eye } from 'lucide-react'
 import Card from '@/components/common/Card'
 import Button from '@/components/common/Button'
 import Input from '@/components/common/Input'
-import Modal from '@/components/common/Modal'
-import Badge from '@/components/common/Badge'
-import type { MessageTemplate } from '@/types'
+import { templateApi } from '@/services/api'
+
+interface Template {
+  id: number
+  name: string
+  description: string
+  content: string
+  variables: string[]
+  created_at: string
+  updated_at: string
+}
+
+interface TemplatePreview {
+  phone: string
+  message: string
+}
 
 export default function Templates() {
-  const [templates, setTemplates] = useState<MessageTemplate[]>([
-    {
-      id: '1',
-      name: 'Welcome Message',
-      message: 'Hi {{name}}, welcome to our service! Your phone number is {{phone}}.',
-      variables: ['name', 'phone'],
-      createdAt: new Date().toISOString(),
-    },
-  ])
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingTemplate, setEditingTemplate] = useState<MessageTemplate | null>(null)
-  const [formData, setFormData] = useState({ name: '', message: '' })
+  const [templates, setTemplates] = useState<Template[]>([])
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [showPreview, setShowPreview] = useState(false)
+  const [previewData, setPreviewData] = useState<TemplatePreview[]>([])
 
-  const extractVariables = (message: string): string[] => {
-    const regex = /{{(\w+)}}/g
-    const matches = message.matchAll(regex)
-    return Array.from(new Set(Array.from(matches, m => m[1])))
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    content: '',
+  })
+
+  const [previewRecipients, setPreviewRecipients] = useState('')
+
+  useEffect(() => {
+    loadTemplates()
+  }, [])
+
+  const loadTemplates = async () => {
+    try {
+      setLoading(true)
+      const response = await templateApi.getAll()
+      setTemplates(response.data || [])
+    } catch (error) {
+      console.error('Failed to load templates:', error)
+      setTemplates([])
+      showMessage('error', 'Failed to load templates')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleSave = () => {
-    const variables = extractVariables(formData.message)
+  const showMessage = (type: 'success' | 'error', text: string) => {
+    setMessage({ type, text })
+    setTimeout(() => setMessage(null), 3000)
+  }
 
-    if (editingTemplate) {
-      setTemplates(templates.map(t =>
-        t.id === editingTemplate.id
-          ? { ...t, name: formData.name, message: formData.message, variables }
-          : t
-      ))
-    } else {
-      const newTemplate: MessageTemplate = {
-        id: Date.now().toString(),
-        name: formData.name,
-        message: formData.message,
-        variables,
-        createdAt: new Date().toISOString(),
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!formData.name.trim() || !formData.content.trim()) {
+      showMessage('error', 'Name and content are required')
+      return
+    }
+
+    try {
+      setLoading(true)
+      if (editingId) {
+        await templateApi.update(editingId, formData)
+        showMessage('success', 'Template updated')
+      } else {
+        await templateApi.create(formData)
+        showMessage('success', 'Template created')
       }
-      setTemplates([...templates, newTemplate])
-    }
-
-    handleCloseModal()
-  }
-
-  const handleEdit = (template: MessageTemplate) => {
-    setEditingTemplate(template)
-    setFormData({ name: template.name, message: template.message })
-    setIsModalOpen(true)
-  }
-
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this template?')) {
-      setTemplates(templates.filter(t => t.id !== id))
+      resetForm()
+      loadTemplates()
+    } catch (error: any) {
+      showMessage('error', error.message || 'Failed to save template')
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleCopy = (message: string) => {
-    navigator.clipboard.writeText(message)
-    alert('Template copied to clipboard!')
+  const handleEdit = (template: Template) => {
+    setFormData({
+      name: template.name,
+      description: template.description,
+      content: template.content,
+    })
+    setEditingId(template.id)
+    setShowForm(true)
   }
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false)
-    setEditingTemplate(null)
-    setFormData({ name: '', message: '' })
+  const handleDelete = async (id: number) => {
+    if (!confirm('Delete this template?')) return
+
+    try {
+      setLoading(true)
+      await templateApi.delete(id)
+      showMessage('success', 'Template deleted')
+      loadTemplates()
+    } catch (error: any) {
+      showMessage('error', error.message || 'Failed to delete template')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleOpenModal = () => {
-    setEditingTemplate(null)
-    setFormData({ name: '', message: '' })
-    setIsModalOpen(true)
+  const handlePreview = async (template: Template) => {
+    const phones = previewRecipients
+      .split('\n')
+      .map(p => p.trim())
+      .filter(p => p)
+
+    if (phones.length === 0) {
+      showMessage('error', 'Enter at least one phone number')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const recipients = phones.map(phone => ({
+        phone,
+        variables: {},
+      }))
+      const response = await templateApi.preview(template.id, recipients)
+      setPreviewData(response.data)
+      setShowPreview(true)
+    } catch (error: any) {
+      showMessage('error', error.message || 'Failed to preview template')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      content: '',
+    })
+    setEditingId(null)
+    setShowForm(false)
+  }
+
+  const extractVariables = (content: string) => {
+    const regex = /\{\{([^}]+)\}\}/g
+    const matches = []
+    let match
+    while ((match = regex.exec(content)) !== null) {
+      matches.push(match[1])
+    }
+    return [...new Set(matches)]
   }
 
   return (
@@ -84,77 +163,166 @@ export default function Templates() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Message Templates</h1>
-          <p className="text-gray-600 mt-1">Create and manage reusable message templates</p>
+          <p className="text-gray-600 mt-1">Create reusable templates with variables to personalize messages</p>
         </div>
-        <Button onClick={handleOpenModal}>
+        <Button onClick={() => setShowForm(!showForm)}>
           <Plus className="w-4 h-4 mr-2" />
           New Template
         </Button>
       </div>
 
-      {/* Templates Grid */}
-      {templates.length === 0 ? (
+      {message && (
+        <div
+          className={`rounded-lg p-4 ${
+            message.type === 'success'
+              ? 'bg-green-50 border border-green-200 text-green-800'
+              : 'bg-red-50 border border-red-200 text-red-800'
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
+
+      {showForm && (
         <Card>
-          <div className="text-center py-12">
-            <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No templates yet</h3>
-            <p className="text-gray-600 mb-4">Create your first message template</p>
-            <Button onClick={handleOpenModal}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Template
+          <div className="p-6">
+            <h2 className="text-lg font-semibold mb-4">
+              {editingId ? 'Edit Template' : 'Create Template'}
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                label="Template Name"
+                placeholder="e.g., Welcome Message"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                disabled={!!editingId}
+              />
+
+              <Input
+                label="Description"
+                placeholder="What is this template for?"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Message Content
+                </label>
+                <textarea
+                  value={formData.content}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  placeholder="Use {{variable}} for personalization. Example: Hello {{name}}, welcome to {{company}}!"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={6}
+                />
+              </div>
+
+              {formData.content && (
+                <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                  <p className="text-sm font-semibold text-blue-900 mb-2">Variables found:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {extractVariables(formData.content).map((variable) => (
+                      <span key={variable} className="bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs font-mono">
+                        {variable}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex space-x-3">
+                <Button type="submit" isLoading={loading}>
+                  {editingId ? 'Update' : 'Create'} Template
+                </Button>
+                <Button variant="secondary" onClick={resetForm}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
+        </Card>
+      )}
+
+      {showPreview && (
+        <Card>
+          <div className="p-6">
+            <h2 className="text-lg font-semibold mb-4">Template Preview</h2>
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {previewData.map((preview, idx) => (
+                <div key={idx} className="bg-gray-50 p-3 rounded border border-gray-200">
+                  <p className="text-sm font-mono text-gray-600 mb-1">{preview.phone}</p>
+                  <p className="text-sm text-gray-800">{preview.message}</p>
+                </div>
+              ))}
+            </div>
+            <Button variant="secondary" onClick={() => setShowPreview(false)} className="mt-4">
+              Close Preview
             </Button>
           </div>
         </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {templates.map((template) => (
-            <Card key={template.id} className="hover:shadow-md transition-shadow">
-              <div className="space-y-4">
-                <div className="flex items-start justify-between">
+      )}
+
+      <div className="grid gap-4">
+        {loading && templates.length === 0 ? (
+          <Card>
+            <div className="p-6 text-center text-gray-500">Loading templates...</div>
+          </Card>
+        ) : templates.length === 0 ? (
+          <Card>
+            <div className="p-6 text-center text-gray-500">No templates yet</div>
+          </Card>
+        ) : (
+          templates.map((template) => (
+            <Card key={template.id}>
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="font-semibold text-gray-900">{template.name}</h3>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Created {new Date(template.createdAt).toLocaleDateString()}
-                    </p>
+                    <h3 className="font-semibold text-lg">{template.name}</h3>
+                    {template.description && (
+                      <p className="text-sm text-gray-600">{template.description}</p>
+                    )}
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-4">
-                    {template.message}
-                  </p>
+                <div className="bg-gray-50 p-3 rounded mb-4 text-sm">
+                  <p className="text-gray-700 whitespace-pre-wrap">{template.content}</p>
                 </div>
 
                 {template.variables.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {template.variables.map((variable) => (
-                      <Badge key={variable} variant="info" size="sm">
-                        {'{{' + variable + '}}'}
-                      </Badge>
-                    ))}
+                  <div className="mb-4">
+                    <p className="text-xs font-semibold text-gray-600 mb-2">Variables:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {template.variables.map((variable) => (
+                        <span key={variable} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-mono">
+                          {variable}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
 
                 <div className="flex space-x-2">
                   <Button
-                    size="sm"
                     variant="secondary"
-                    onClick={() => handleCopy(template.message)}
-                    className="flex-1"
+                    size="sm"
+                    onClick={() => {
+                      setPreviewRecipients('')
+                      handlePreview(template)
+                    }}
                   >
-                    <Copy className="w-4 h-4 mr-1" />
-                    Copy
+                    <Eye className="w-4 h-4" />
                   </Button>
                   <Button
-                    size="sm"
                     variant="secondary"
+                    size="sm"
                     onClick={() => handleEdit(template)}
                   >
-                    <Edit className="w-4 h-4" />
+                    <Edit2 className="w-4 h-4" />
                   </Button>
                   <Button
-                    size="sm"
                     variant="danger"
+                    size="sm"
                     onClick={() => handleDelete(template.id)}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -162,70 +330,9 @@ export default function Templates() {
                 </div>
               </div>
             </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Create/Edit Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        title={editingTemplate ? 'Edit Template' : 'Create Template'}
-        size="lg"
-        footer={
-          <>
-            <Button variant="secondary" onClick={handleCloseModal}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={!formData.name.trim() || !formData.message.trim()}
-            >
-              {editingTemplate ? 'Update' : 'Create'}
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <Input
-            label="Template Name"
-            placeholder="e.g., Welcome Message"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          />
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Message Content
-            </label>
-            <textarea
-              rows={8}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Enter your message template here. Use {{variable}} for dynamic content."
-              value={formData.message}
-              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              Use {'{{name}}'}, {'{{phone}}'}, or any custom variable
-            </p>
-          </div>
-
-          {formData.message && extractVariables(formData.message).length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Detected Variables
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {extractVariables(formData.message).map((variable) => (
-                  <Badge key={variable} variant="info">
-                    {'{{' + variable + '}}'}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </Modal>
+          ))
+        )}
+      </div>
     </div>
   )
 }

@@ -63,10 +63,10 @@ export interface Recipient {
 }
 
 export interface CheckUserResponse {
-  query: string
-  isIn: boolean
-  jid: string
-  verifiedName?: string
+  Query: string
+  IsIn: boolean
+  JID: string
+  VerifiedName?: string
 }
 
 // Template Types

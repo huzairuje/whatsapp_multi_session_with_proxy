@@ -273,4 +273,76 @@ api.interceptors.response.use(
   }
 )
 
+// Warm-up Management
+export const warmupApi = {
+  create: (data: {
+    sender_jid: string
+    enabled: boolean
+    daily_limit: number
+    increment_amount: number
+    increment_days: number
+    max_daily_limit: number
+  }) => api.post('/warmup', data),
+
+  get: (sender: string) =>
+    api.get('/warmup', { params: { sender } }),
+
+  getAll: () => api.get('/warmup/all'),
+
+  update: (sender: string, data: {
+    enabled?: boolean
+    daily_limit?: number
+    increment_amount?: number
+    increment_days?: number
+    max_daily_limit?: number
+  }) => api.put('/warmup', data, { params: { sender } }),
+
+  delete: (sender: string) =>
+    api.delete('/warmup', { params: { sender } }),
+
+  getStatus: (sender: string) =>
+    api.get('/warmup/status', { params: { sender } }),
+}
+
+// Template Management
+export const templateApi = {
+  create: (data: {
+    name: string
+    description?: string
+    content: string
+  }) => api.post('/templates', data),
+
+  get: (id: number) =>
+    api.get('/templates', { params: { id } }),
+
+  getAll: () => api.get('/templates/all'),
+
+  update: (id: number, data: {
+    name?: string
+    description?: string
+    content?: string
+  }) => api.put('/templates', data, { params: { id } }),
+
+  delete: (id: number) =>
+    api.delete('/templates', { params: { id } }),
+
+  preview: (id: number, recipients: Array<{ phone: string; variables?: Record<string, string> }>) =>
+    api.post('/templates/preview', { recipients }, { params: { id } }),
+}
+
+// Contacts Management
+export const contactsApi = {
+  getContacts: (sender: string, limit: number = 50, offset: number = 0) =>
+    api.get('/contacts', { params: { sender, limit, offset } }),
+
+  searchContacts: (sender: string, query: string) =>
+    api.get('/contacts/search', { params: { sender, q: query } }),
+
+  syncContacts: (sender_jid: string, force: boolean = false) =>
+    api.post('/contacts/sync', { sender_jid, force }),
+
+  deleteContact: (sender: string, contact_jid: string) =>
+    api.delete('/contacts', { params: { sender, contact_jid } }),
+}
+
 export default api

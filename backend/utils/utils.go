@@ -61,8 +61,8 @@ func IsAudio(mimeType string) bool {
 }
 
 func ValidatePhoneNumber(phoneNumber string) bool {
-	// Define a regular expression pattern
-	pattern := `^\+[\d\s-]+$` // This pattern requires the phone number to start with '+'
+	// Define a regular expression pattern that accepts phone numbers with or without '+'
+	pattern := `^[\+]?[\d\s-]+$` // Accepts both +628... and 628...
 
 	// Compile the regular expression
 	regex := regexp.MustCompile(pattern)

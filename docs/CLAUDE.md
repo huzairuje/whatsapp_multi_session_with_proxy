@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance when working with code in this repository.
 
 ## Project Overview
 
@@ -51,42 +51,18 @@ npm run dev
 
 **IMPORTANT:** CGO_ENABLED=1 is required for SQLite support.
 
-### Using Makefile
-
+### Linux
 ```bash
-# Build for Linux (default)
-make build-backend
-
-# Build for Windows (requires mingw)
-make build-windows
-
-# Build frontend for production
-make build-frontend
-
-# Build everything
-make build
-
-# Clean build artifacts
-make clean
-```
-
-### Manual Build Commands
-
-**Linux:**
-```bash
-cd backend
 env GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-w -s" -trimpath -o ../bin/whatsapp_multi_session-linux-amd64
 ```
 
-**Windows (from Linux/macOS with mingw):**
+### Windows (from Linux/macOS with mingw)
 ```bash
-cd backend
 env GOOS=windows GOARCH=amd64 CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc go build -ldflags="-w -s" -trimpath -o ../bin/whatsapp_multi_session-windows-amd64.exe
 ```
 
-**Windows (native):**
+### Windows (native)
 ```cmd
-cd backend
 set GOOS=windows
 set GOARCH=amd64
 set CGO_ENABLED=1
@@ -204,11 +180,11 @@ backend/
 ├── activity/          # Activity logging service
 ├── auth/              # Authentication & authorization
 ├── boot/              # Application bootstrap
-├── bulksender/        # Bulk message sending with anti-ban
 ├── client/            # External clients (HTTP, Redis)
+│   ├── http/          # HTTP client
+│   └── redis/         # Redis client
 ├── commandhandler/    # Core business logic
 ├── config/            # Configuration management
-├── contacts/          # Contact management service
 ├── cronjob/           # Background jobs
 ├── database/          # Database abstraction
 ├── handler/           # HTTP request handlers
@@ -217,12 +193,8 @@ backend/
 ├── primitive/         # Shared types and constants
 ├── proxy/             # Proxy management
 ├── routers/           # Route registration
-├── scheduler/         # Scheduled bulk send service
-├── template/          # Message template service
 ├── utils/             # Utility functions
 ├── validator/         # Input validation
-├── warmup/            # Account warm-up service
-├── worker/            # Background workers
 ├── main.go            # Application entry point
 └── go.mod             # Go dependencies
 
@@ -240,18 +212,12 @@ The `Setup()` function initializes components in this order:
 2. **Auth Service**: User authentication and JWT token management
 3. **Message Service**: Message tracking and statistics
 4. **Activity Service**: Activity logging and audit trail
-5. **Warm-up Service**: Account warm-up management
-6. **Template Service**: Message template management
-7. **Scheduler Service**: Scheduled bulk send management
-8. **Contacts Service**: Contact management
-9. **Validator**: Input validation
-10. **Proxy Manager**: Loads proxy list from configured directory
-11. **Command Handler**: Core business logic for WhatsApp operations
-12. **Listener**: Event listeners for startup/shutdown events
-13. **HTTP Handler**: Request handlers for REST API
-14. **Router**: API route registration
-15. **Cronjob**: Background jobs (e.g., auto-presence)
-16. **Scheduler Worker**: Background worker for scheduled bulk sends
+5. **Proxy Manager**: Loads proxy list from configured directory
+6. **Command Handler**: Core business logic for WhatsApp operations
+7. **Listener**: Event listeners for startup/shutdown events
+8. **HTTP Handler**: Request handlers for REST API
+9. **Router**: API route registration
+10. **Cronjob**: Background jobs (e.g., auto-presence)
 
 ### Key Components
 
@@ -280,37 +246,6 @@ Activity logging service for audit trail and monitoring:
 - Activity statistics and recent activity queries
 - Supports both SQLite and PostgreSQL
 
-#### warmup/
-Account warm-up service for gradually increasing sending limits:
-- Configurable warm-up schedules with daily message limits
-- Progressive increase in sending capacity over time
-- Status tracking: active, paused, completed
-- Prevents account bans by simulating natural usage patterns
-- Supports both SQLite and PostgreSQL
-
-#### template/
-Message template service for reusable message content:
-- Create, read, update, delete message templates
-- Variable substitution support (e.g., {{name}}, {{company}})
-- Template preview with sample data
-- Supports both SQLite and PostgreSQL
-
-#### scheduler/
-Scheduled bulk send service for time-based message delivery:
-- Schedule bulk sends for future execution
-- Status tracking: pending, processing, completed, failed
-- Integration with warm-up service for limit enforcement
-- Background worker processes scheduled jobs
-- Supports both SQLite and PostgreSQL
-
-#### contacts/
-Contact management service:
-- Store and manage WhatsApp contacts
-- Contact synchronization from WhatsApp
-- Search and filter contacts
-- Contact enrichment with additional metadata
-- Supports both SQLite and PostgreSQL
-
 #### client/
 External client integrations:
 - **http/**: HTTP client for making external API calls
@@ -319,21 +254,12 @@ External client integrations:
 #### commandhandler/
 Core business logic for WhatsApp operations. Manages WhatsApp client lifecycle, message sending, QR code generation, device management, and bulk sending with anti-ban features. Uses concurrent map to store active clients keyed by JID.
 
-Key files:
-- `commandhandler.go`: Main handler with client management
-- `contact_enrich.go`: Contact enrichment logic
-- `contacts_sync.go`: Contact synchronization logic
-
 #### handler/
 HTTP request handlers that validate input, interact with CommandHandler, and return JSON responses. Implements all API endpoints with proper error handling. Split into multiple files:
-- `handler.go`: Main WhatsApp operation handlers
-- `auth_handler.go`: Authentication handlers
-- `message_handler.go`: Message tracking handlers
-- `activity_handler.go`: Activity logging handlers
-- `warmup_handler.go`: Warm-up management handlers
-- `template_handler.go`: Template management handlers
-- `scheduler_handler.go`: Scheduler management handlers
-- `contacts_handler.go`: Contact management handlers
+- `handler.go`: Main WhatsApp operation handlers (33.7K)
+- `auth_handler.go`: Authentication handlers (1.8K)
+- `message_handler.go`: Message tracking handlers (2.4K)
+- `activity_handler.go`: Activity logging handlers (2.3K)
 
 #### listener/
 Event-driven lifecycle management using [gookit/event](https://github.com/gookit/event):
@@ -365,12 +291,6 @@ Bulk message sending with anti-ban protection:
 - Recipient validation with caching
 - Health monitoring
 - Error-based backoff
-
-#### worker/
-Background workers for asynchronous task processing:
-- Scheduler worker: Processes scheduled bulk sends
-- Runs continuously in the background
-- Integrates with scheduler and warm-up services
 
 ### Event System
 
@@ -444,33 +364,6 @@ All endpoints are registered in `backend/routers/routers.go`:
 - `GET /activities/type` - Get activities by type
 - `GET /activities/stats` - Get activity statistics
 
-### Warm-up Management (Protected)
-- `POST /warmup` - Create warm-up schedule
-- `GET /warmup` - Get warm-up schedule by sender
-- `GET /warmup/all` - Get all warm-up schedules
-- `PUT /warmup` - Update warm-up schedule
-- `DELETE /warmup` - Delete warm-up schedule
-- `GET /warmup/status` - Get warm-up status
-
-### Template Management (Protected)
-- `POST /templates` - Create message template
-- `GET /templates` - Get template by ID
-- `GET /templates/all` - Get all templates
-- `PUT /templates` - Update template
-- `DELETE /templates` - Delete template
-- `POST /templates/preview` - Preview template with sample data
-
-### Scheduler Management (Protected)
-- `POST /scheduler/jobs` - Create scheduled bulk send job
-- `GET /scheduler/jobs` - Get scheduled job by ID
-- `GET /scheduler/jobs/pending` - Get pending scheduled jobs
-
-### Contact Management (Protected)
-- `GET /contacts` - Get contacts with filtering
-- `GET /contacts/search` - Search contacts
-- `POST /contacts/sync` - Sync contacts from WhatsApp
-- `DELETE /contacts` - Delete contact
-
 ## Development Notes
 
 ### Query Parameters
@@ -517,10 +410,6 @@ Additional tables are created by the application services:
 - **users**: User accounts and authentication (auth service)
 - **messages**: Message tracking and status (message service)
 - **activities**: Activity logs and audit trail (activity service)
-- **warmup_schedules**: Warm-up configurations (warmup service)
-- **templates**: Message templates (template service)
-- **scheduled_jobs**: Scheduled bulk sends (scheduler service)
-- **contacts**: Contact information (contacts service)
 
 All tables support both SQLite and PostgreSQL.
 
@@ -537,7 +426,6 @@ The bulk sender implements multiple anti-ban mechanisms:
 - **Health checks** before bulk operations
 - **Error-based backoff** when rate limits are detected
 - **Daily limits** per sender to prevent abuse
-- **Warm-up integration** to respect progressive sending limits
 
 ### Testing
 When adding new endpoints or modifying existing ones:
@@ -549,56 +437,23 @@ When adding new endpoints or modifying existing ones:
 6. Test anti-ban features with bulk sending
 7. Test authentication and authorization
 8. Verify message tracking and activity logging
-9. Test warm-up schedule enforcement
-10. Test template variable substitution
-11. Test scheduled job execution
-12. Test contact synchronization
-
-Run tests with:
-```bash
-# Backend tests
-make test-backend
-# or
-cd backend && go test ./... -v
-
-# Frontend tests
-make test-frontend
-# or
-cd frontend && npm run test
-```
 
 ## Dependencies
 
-### Key Go Dependencies
+Key Go dependencies:
 - `github.com/gin-gonic/gin` - HTTP framework
-- `go.mau.fi/whatsmeow` - WhatsApp Web client library
+- `go.mau.fi/whatsmeow` - WhatsApp Web client
 - `github.com/spf13/viper` - Configuration management
-- `github.com/sirupsen/logrus` - Structured logging
-- `github.com/gookit/event` - Event system for lifecycle management
+- `github.com/sirupsen/logrus` - Logging
+- `github.com/gookit/event` - Event system
 - `github.com/lib/pq` - PostgreSQL driver
-- `github.com/mattn/go-sqlite3` - SQLite driver (requires CGO)
+- `github.com/mattn/go-sqlite3` - SQLite driver
 - `github.com/skip2/go-qrcode` - QR code generation
+- `google.golang.org/protobuf` - Protocol buffers
 - `github.com/golang-jwt/jwt/v5` - JWT authentication
 - `golang.org/x/crypto/bcrypt` - Password hashing
-- `github.com/go-playground/validator/v10` - Input validation
-- `github.com/go-redis/redis` - Redis client
-- `google.golang.org/protobuf` - Protocol buffers
 
-### Key Node Dependencies
-- `react` ^18.2.0 - UI framework
-- `react-router-dom` ^6.22.0 - Client-side routing
-- `@tanstack/react-query` ^5.28.0 - Data fetching and caching
-- `axios` ^1.6.7 - HTTP client
-- `zustand` ^4.5.2 - State management
-- `react-hook-form` ^7.51.0 - Form handling
-- `recharts` ^2.12.2 - Charts and data visualization
-- `lucide-react` ^0.344.0 - Icon library
-- `vite` ^5.1.4 - Build tool and dev server
-- `typescript` ^5.2.2 - Type safety
-- `tailwindcss` ^3.4.1 - Utility-first CSS framework
-
-## Module Information
-
-- **Go Module**: `whatsapp_multi_session`
-- **Go Version**: 1.25.0+
-- **Frontend Package**: `whatsapp-bulk-sender-frontend`
+Key Node dependencies:
+- `react` - UI framework
+- `vite` - Build tool
+- `typescript` - Type safety

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"whatsapp_multi_session/config"
+	"whatsapp_multi_session/warmup"
 
 	log "github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow"
@@ -217,9 +218,21 @@ func SendBulkSequential(
 	message string,
 	variables map[string]string,
 	parseJID func(string) (types.JID, bool),
+	warmUpService *warmup.Service,
 ) []BulkResult {
 	cfg := getConfig()
 	rng := rand.New(rand.NewPCG(uint64(time.Now().UnixNano()), uint64(time.Now().UnixNano()<<1)))
+
+	dailyLimit := cfg.DailyLimit
+	if warmUpService != nil {
+		warmUpLimit, err := warmUpService.GetCurrentDailyLimit(sender.String())
+		if err != nil {
+			log.Warnf("[BulkSend] Failed to get warm-up limit, using config default: %v", err)
+		} else if warmUpLimit > 0 {
+			dailyLimit = warmUpLimit
+			log.Infof("[BulkSend] Using warm-up daily limit: %d for sender %s", dailyLimit, sender.User)
+		}
+	}
 
 	// Check time-of-day restrictions
 	if allowed, waitDuration := isWithinAllowedHours(cfg); !allowed {
@@ -254,15 +267,15 @@ func SendBulkSequential(
 		}
 
 		// Check daily limit
-		_, allowed := IncrementDailyCount(sender.User, cfg.DailyLimit)
+		_, allowed := IncrementDailyCount(sender.User, dailyLimit)
 		if !allowed {
-			log.Warnf("[BulkSend] Daily limit (%d) reached for sender %s, stopping", cfg.DailyLimit, sender.User)
+			log.Warnf("[BulkSend] Daily limit (%d) reached for sender %s, stopping", dailyLimit, sender.User)
 			// Mark remaining as skipped
 			for j := i; j < len(recipients); j++ {
 				results = append(results, BulkResult{
 					Recipient: recipients[j],
 					Success:   false,
-					Error:     fmt.Sprintf("daily limit reached (%d messages)", cfg.DailyLimit),
+					Error:     fmt.Sprintf("daily limit reached (%d messages)", dailyLimit),
 				})
 			}
 			return results

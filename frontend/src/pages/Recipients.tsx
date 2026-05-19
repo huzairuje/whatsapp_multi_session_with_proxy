@@ -1,11 +1,29 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Upload, UserCheck, Trash2 } from 'lucide-react'
+import { Upload, UserCheck, Trash2, Users } from 'lucide-react'
 import Card from '@/components/common/Card'
 import Button from '@/components/common/Button'
 import Input from '@/components/common/Input'
 import Badge from '@/components/common/Badge'
-import { sessionApi, userApi } from '@/services/api'
+import Modal from '@/components/common/Modal'
+import { sessionApi, userApi, contactsApi } from '@/services/api'
+
+interface Contact {
+  id: number
+  sender_jid: string
+  contact_jid: string
+  contact_name: string
+  push_name: string
+  business_name: string
+  first_name: string
+  full_name: string
+  is_blocked: boolean
+  is_business: boolean
+  is_enterprise: boolean
+  last_synced_at: string
+  created_at: string
+  updated_at: string
+}
 
 interface Recipient {
   phone: string
@@ -20,6 +38,13 @@ export default function Recipients() {
   const [newName, setNewName] = useState('')
   const [isValidating, setIsValidating] = useState(false)
   const [selectedSender, setSelectedSender] = useState<string>('')
+  const [showContactPicker, setShowContactPicker] = useState(false)
+  const [contacts, setContacts] = useState<Contact[]>([])
+  const [loadingContacts, setLoadingContacts] = useState(false)
+  const [contactSearch, setContactSearch] = useState('')
+  const [pickerPage, setPickerPage] = useState(1)
+  const pickerPageSize = 40
+  const [totalPickerContacts, setTotalPickerContacts] = useState(0)
 
   const { data: devices } = useQuery({
     queryKey: ['devices'],
@@ -42,6 +67,46 @@ export default function Recipients() {
       setNewPhone('')
       setNewName('')
     }
+  }
+
+  const loadContactsForPicker = async (page: number = 1) => {
+    if (!selectedSender) {
+      alert('Please select a WhatsApp session first')
+      return
+    }
+
+    try {
+      setLoadingContacts(true)
+      const senderJID = `${selectedSender}@s.whatsapp.net`
+      const offset = (page - 1) * pickerPageSize
+      const response = await contactsApi.getContacts(senderJID, pickerPageSize, offset)
+      setContacts(response.data.contacts || [])
+      setTotalPickerContacts(response.data.total || 0)
+      setPickerPage(page)
+      setShowContactPicker(true)
+    } catch (error) {
+      console.error('Failed to load contacts:', error)
+      alert('Failed to load contacts. Make sure you have synced contacts first.')
+    } finally {
+      setLoadingContacts(false)
+    }
+  }
+
+  const handleAddContactAsRecipient = (contact: Contact) => {
+    const phone = contact.contact_jid.split('@')[0]
+    const name = contact.contact_name || contact.push_name || contact.full_name
+
+    if (!recipients.find(r => r.phone === phone)) {
+      setRecipients([
+        ...recipients,
+        {
+          phone,
+          name,
+        },
+      ])
+    }
+    setShowContactPicker(false)
+    setContactSearch('')
   }
 
   const handleRemoveRecipient = (phone: string) => {
@@ -88,13 +153,29 @@ export default function Recipients() {
 
     setIsValidating(true)
     try {
-      const phoneNumbers = recipients.map(r => r.phone)
+      // Filter out LID numbers using the helper function
+      const validPhones = recipients.filter(r => !isLIDNumber(r.phone))
+      const lidPhones = recipients.filter(r => isLIDNumber(r.phone))
+
+      if (validPhones.length === 0) {
+        alert('No regular phone numbers to validate. All numbers appear to be LID/business contacts.')
+        return
+      }
+
+      if (lidPhones.length > 0) {
+        alert(`Skipping ${lidPhones.length} LID/business contacts (cannot validate). Validating ${validPhones.length} regular numbers.`)
+      }
+
+      const phoneNumbers = validPhones.map(r => r.phone)
       const response = await userApi.checkUser(selectedSender, phoneNumbers)
 
       // Update recipients with validation results
-      const resultsMap = new Map(response.data.map((result: any) => [result.jid.split('@')[0], result]))
+      const resultsMap = new Map(response.data.map((result: any) => [result.JID.split('@')[0], result]))
 
       setRecipients(recipients.map(r => {
+        if (lidPhones.find(lid => lid.phone === r.phone)) {
+          return { ...r, isValid: undefined, lastChecked: new Date() }
+        }
         const result = resultsMap.get(r.phone)
         return {
           ...r,
@@ -103,15 +184,33 @@ export default function Recipients() {
         }
       }))
     } catch (error: any) {
-      alert(`Validation failed: ${error.message || 'Unknown error'}`)
+      console.error('Validation error:', error)
+      const errorMsg = error?.response?.data?.error || error?.message || JSON.stringify(error)
+      alert(`Validation failed: ${errorMsg}`)
     } finally {
       setIsValidating(false)
     }
   }
 
+  const isLIDNumber = (phone: string): boolean => {
+    // LID numbers: contain @, or >13 digits, or don't start with valid country code
+    if (phone.includes('@')) return true
+    if (phone.length > 13) return true
+    // Check if starts with common country codes (62 for Indonesia, 1 for US, etc.)
+    const validPrefixes = ['1', '7', '20', '27', '30', '31', '32', '33', '34', '36', '39', '40', '41', '43', '44', '45', '46', '47', '48', '49', '51', '52', '53', '54', '55', '56', '57', '58', '60', '61', '62', '63', '64', '65', '66', '81', '82', '84', '86', '90', '91', '92', '93', '94', '95', '98']
+    const hasValidPrefix = validPrefixes.some(prefix => phone.startsWith(prefix))
+    return !hasValidPrefix
+  }
+
   const handleValidateSingle = async (phone: string) => {
     if (!selectedSender) {
       alert('Please select a WhatsApp session first')
+      return
+    }
+
+    // Check if it's a LID number
+    if (isLIDNumber(phone)) {
+      alert('Cannot validate LID/business numbers. This appears to be a linked device ID, not a regular phone number.')
       return
     }
 
@@ -130,7 +229,9 @@ export default function Recipients() {
         return r
       }))
     } catch (error: any) {
-      alert(`Validation failed: ${error.message || 'Unknown error'}`)
+      console.error('Validation error:', error)
+      const errorMsg = error?.response?.data?.error || error?.message || JSON.stringify(error)
+      alert(`Validation failed: ${errorMsg}`)
     }
   }
 
@@ -250,6 +351,16 @@ export default function Recipients() {
           </div>
 
           <div className="flex space-x-3">
+            <Button 
+              variant="secondary" 
+              onClick={() => loadContactsForPicker(1)}
+              isLoading={loadingContacts}
+              disabled={!selectedSender}
+              className="flex-1"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Pick from Contacts
+            </Button>
             <label className="flex-1">
               <input
                 type="file"
@@ -327,6 +438,95 @@ export default function Recipients() {
           </div>
         )}
       </Card>
+
+      {/* Contact Picker Modal */}
+      <Modal
+        isOpen={showContactPicker}
+        onClose={() => {
+          setShowContactPicker(false)
+          setContactSearch('')
+          setPickerPage(1)
+        }}
+        title="Select Contacts"
+      >
+        <div className="space-y-3">
+          <input
+            type="text"
+            placeholder="Search contacts..."
+            value={contactSearch}
+            onChange={(e) => setContactSearch(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          />
+
+          <div className="flex items-center justify-between text-xs text-gray-600">
+            <div>
+              {totalPickerContacts} contacts (Page {pickerPage} of {Math.ceil(totalPickerContacts / pickerPageSize)})
+            </div>
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => loadContactsForPicker(pickerPage - 1)}
+                disabled={pickerPage === 1 || loadingContacts}
+              >
+                Prev
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => loadContactsForPicker(pickerPage + 1)}
+                disabled={pickerPage >= Math.ceil(totalPickerContacts / pickerPageSize) || loadingContacts}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+
+          <div className="max-h-96 overflow-y-auto">
+            <div className="grid grid-cols-4 gap-1">
+              {contacts
+                .filter(
+                  (contact) =>
+                    contact.contact_name?.toLowerCase().includes(contactSearch.toLowerCase()) ||
+                    contact.push_name?.toLowerCase().includes(contactSearch.toLowerCase()) ||
+                    contact.contact_jid?.includes(contactSearch)
+                )
+                .map((contact) => {
+                  const phone = contact.contact_jid.split('@')[0]
+                  const isAdded = recipients.some((r) => r.phone === phone)
+                  const displayName = contact.contact_name || contact.push_name || contact.full_name || phone
+
+                  return (
+                    <button
+                      key={contact.id}
+                      onClick={() => !isAdded && handleAddContactAsRecipient(contact)}
+                      disabled={isAdded}
+                      className={`p-1.5 rounded border text-center transition-colors ${
+                        isAdded
+                          ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+                          : 'bg-white border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer'
+                      }`}
+                    >
+                      <p className="font-medium text-gray-900 truncate text-xs leading-tight">{displayName}</p>
+                      <p className="text-gray-600 truncate text-xs leading-tight">+{phone}</p>
+                    </button>
+                  )
+                })}
+            </div>
+
+            {contacts.filter(
+              (contact) =>
+                contact.contact_name?.toLowerCase().includes(contactSearch.toLowerCase()) ||
+                contact.push_name?.toLowerCase().includes(contactSearch.toLowerCase()) ||
+                contact.contact_jid?.includes(contactSearch)
+            ).length === 0 && (
+              <div className="text-center py-6 text-gray-500 text-sm">
+                {contacts.length === 0 ? 'No contacts available. Sync contacts first.' : 'No contacts match your search.'}
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

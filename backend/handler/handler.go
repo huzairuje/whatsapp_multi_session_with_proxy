@@ -15,6 +15,7 @@ import (
 	"whatsapp_multi_session/config"
 	"whatsapp_multi_session/message"
 	"whatsapp_multi_session/primitive"
+	"whatsapp_multi_session/scheduler"
 	"whatsapp_multi_session/utils"
 	"whatsapp_multi_session/validator"
 
@@ -112,12 +113,13 @@ func (h Handler) ServeSendText(c *gin.Context) {
 	errValidateStruct := validator.ValidateStructResponseSliceString(requestBody)
 	if errValidateStruct != nil {
 		log.Errorf("validator.ValidateStructResponseSliceString got err : %v", errValidateStruct)
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": errValidateStruct})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("%v", errValidateStruct)})
 		return
 	}
 
 	msgID, err := h.CommandHandler.HandleSendTextMessage(senderJidTypes, requestBody.Message, requestBody.Recipient)
 	if err != nil {
+		h.ActivityService.LogActivity(activity.TypeMessageFailed, fmt.Sprintf("Failed to send message to %s", requestBody.Recipient), senderString, "", fmt.Sprintf("Recipient: %s", requestBody.Recipient), "failed", err.Error())
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
@@ -127,6 +129,8 @@ func (h Handler) ServeSendText(c *gin.Context) {
 	if recordErr != nil {
 		log.Errorf("failed to record message: %v", recordErr)
 	}
+
+	h.ActivityService.LogActivity(activity.TypeMessageSent, fmt.Sprintf("Message sent to %s", requestBody.Recipient), senderString, "", fmt.Sprintf("Message ID: %s, Recipient: %s", msgID, requestBody.Recipient), "success", "")
 
 	c.JSON(http.StatusOK, gin.H{"message": "success", "id_pesan": msgID})
 	return
@@ -173,7 +177,47 @@ func (h Handler) ServeSendTextBulk(c *gin.Context) {
 	errValidateStruct := validator.ValidateStructResponseSliceString(requestBody)
 	if errValidateStruct != nil {
 		log.Errorf("validator.ValidateStructResponseSliceString got err : %v", errValidateStruct)
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": errValidateStruct})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("%v", errValidateStruct)})
+		return
+	}
+
+	// Check if bulk send should be scheduled (> 10 recipients)
+	if len(requestBody.Recipients) > 10 {
+		// Use scheduler for large bulk sends
+		schedReq := scheduler.CreateScheduledJobRequest{
+			SenderJID:  senderString,
+			Recipients: requestBody.Recipients,
+		}
+
+		if requestBody.TemplateID != nil {
+			schedReq.TemplateID = requestBody.TemplateID
+		}
+
+		schedConfig := scheduler.ScheduleConfig{
+			AllowedHourStart: config.Conf.BulkSend.AllowedHourStart,
+			AllowedHourEnd:   config.Conf.BulkSend.AllowedHourEnd,
+			Timezone:         config.Conf.BulkSend.Timezone,
+			DailyLimit:       config.Conf.BulkSend.DailyLimit,
+			MinDelayMs:       config.Conf.BulkSend.MinDelay,
+			MaxDelayMs:       config.Conf.BulkSend.MaxDelay,
+		}
+
+		job, err := h.CommandHandler.SchedulerService.ScheduleBulkSend(schedReq, schedConfig)
+		if err != nil {
+			log.Errorf("[BulkSend] Failed to schedule bulk send: %v", err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to schedule bulk send"})
+			return
+		}
+
+		h.ActivityService.LogActivity(activity.TypeBulkSendStart, fmt.Sprintf("Bulk send scheduled for %d recipients", len(requestBody.Recipients)), senderString, "", fmt.Sprintf("Job ID: %d, Recipients: %d", job.ID, len(requestBody.Recipients)), "scheduled", "")
+
+		c.JSON(http.StatusOK, gin.H{
+			"message":      "bulk send scheduled",
+			"job_id":       job.ID,
+			"recipients":   len(requestBody.Recipients),
+			"scheduled_for": job.ScheduledFor,
+			"note":         "messages will be sent gradually across multiple days to avoid account flagging",
+		})
 		return
 	}
 
@@ -293,10 +337,10 @@ func (h Handler) ServeCheckUser(c *gin.Context) {
 		return
 	}
 
-	errValidateStruct := validator.ValidateStructResponseSliceString(request)
+	errValidateStruct := h.CommandHandler.Validator.Struct(request)
 	if errValidateStruct != nil {
-		log.Errorf("validator.ValidateStructResponseSliceString got err : %v", errValidateStruct)
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": errValidateStruct})
+		log.Errorf("validator.Struct got err : %v", errValidateStruct)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("%v", errValidateStruct)})
 		return
 	}
 
@@ -453,10 +497,10 @@ func (h Handler) ServeCheckUserSingle(c *gin.Context) {
 		return
 	}
 
-	errValidateStruct := validator.ValidateStructResponseSliceString(request)
+	errValidateStruct := h.CommandHandler.Validator.Struct(request)
 	if errValidateStruct != nil {
-		log.Errorf("validator.ValidateStructResponseSliceString got err : %v", errValidateStruct)
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": errValidateStruct})
+		log.Errorf("validator.Struct got err : %v", errValidateStruct)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("%v", errValidateStruct)})
 		return
 	}
 
@@ -612,7 +656,7 @@ func (h Handler) NewUploadSingleHandler(c *gin.Context) {
 	errValidateStruct := validator.ValidateStructResponseSliceString(request)
 	if errValidateStruct != nil {
 		log.Errorf("validator.ValidateStructResponseSliceString got err : %v", errValidateStruct)
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": errValidateStruct})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("%v", errValidateStruct)})
 		return
 	}
 
@@ -795,7 +839,7 @@ func (h Handler) HandleConnectBulk(c *gin.Context) {
 	errValidateStruct := validator.ValidateStructResponseSliceString(request)
 	if errValidateStruct != nil {
 		log.Errorf("validator.ValidateStructResponseSliceString got err : %v", errValidateStruct)
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": errValidateStruct})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("%v", errValidateStruct)})
 		return
 	}
 
@@ -853,7 +897,7 @@ func (h Handler) HandleDisconnectBulk(c *gin.Context) {
 	errValidateStruct := validator.ValidateStructResponseSliceString(request)
 	if errValidateStruct != nil {
 		log.Errorf("validator.ValidateStructResponseSliceString got err : %v", errValidateStruct)
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": errValidateStruct})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("%v", errValidateStruct)})
 		return
 	}
 
@@ -1021,7 +1065,7 @@ func (h Handler) DeleteMessages(c *gin.Context) {
 	errValidateStruct := validator.ValidateStructResponseSliceString(request)
 	if errValidateStruct != nil {
 		log.Errorf("validator.ValidateStructResponseSliceString got err : %v", errValidateStruct)
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": errValidateStruct})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("%v", errValidateStruct)})
 		return
 	}
 

@@ -69,6 +69,33 @@ func (r Router) V1(router *gin.Engine) *gin.Engine {
 		protected.GET("/activities/sender", r.Handler.HandleGetActivitiesBySender)
 		protected.GET("/activities/type", r.Handler.HandleGetActivitiesByType)
 		protected.GET("/activities/stats", r.Handler.HandleGetActivityStats)
+		
+		// Warm-up endpoints
+		protected.POST("/warmup", r.Handler.HandleCreateWarmUp)
+		protected.GET("/warmup", r.Handler.HandleGetWarmUp)
+		protected.GET("/warmup/all", r.Handler.HandleGetAllWarmUp)
+		protected.PUT("/warmup", r.Handler.HandleUpdateWarmUp)
+		protected.DELETE("/warmup", r.Handler.HandleDeleteWarmUp)
+		protected.GET("/warmup/status", r.Handler.HandleGetWarmUpStatus)
+		
+		// Template endpoints
+		protected.POST("/templates", r.Handler.HandleCreateTemplate)
+		protected.GET("/templates", r.Handler.HandleGetTemplate)
+		protected.GET("/templates/all", r.Handler.HandleGetAllTemplates)
+		protected.PUT("/templates", r.Handler.HandleUpdateTemplate)
+		protected.DELETE("/templates", r.Handler.HandleDeleteTemplate)
+		protected.POST("/templates/preview", r.Handler.HandlePreviewTemplate)
+		
+		// Scheduler endpoints
+		protected.POST("/scheduler/jobs", r.Handler.HandleCreateScheduledJob)
+		protected.GET("/scheduler/jobs", r.Handler.HandleGetScheduledJob)
+		protected.GET("/scheduler/jobs/pending", r.Handler.HandleGetPendingJobs)
+		
+		// Contacts endpoints
+		protected.GET("/contacts", r.Handler.HandleGetContacts)
+		protected.GET("/contacts/search", r.Handler.HandleSearchContacts)
+		protected.POST("/contacts/sync", r.Handler.HandleSyncContacts)
+		protected.DELETE("/contacts", r.Handler.HandleDeleteContact)
 	}
 
 	return router
