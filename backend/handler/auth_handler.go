@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
+	"whatsapp_multi_session/activity"
 	"whatsapp_multi_session/auth"
 
 	"github.com/gin-gonic/gin"
@@ -21,6 +23,8 @@ func (h Handler) HandleLogin(c *gin.Context) {
 		return
 	}
 
+	h.ActivityService.LogActivity(activity.TypeUserLogin, fmt.Sprintf("User %s logged in", req.Username), "", req.Username, "", "success", "")
+
 	c.JSON(http.StatusOK, resp)
 }
 
@@ -36,6 +40,8 @@ func (h Handler) HandleRefreshToken(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})
 		return
 	}
+
+	h.ActivityService.LogActivity(activity.TypeUserLogin, fmt.Sprintf("User %s refreshed token", resp.Username), "", resp.Username, "", "success", "")
 
 	c.JSON(http.StatusOK, resp)
 }

@@ -6,6 +6,7 @@ import BulkSend from './pages/BulkSend'
 import Recipients from './pages/Recipients'
 import Templates from './pages/Templates'
 import Settings from './pages/Settings'
+import Activities from './pages/Activities'
 import Login from './pages/Login'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
@@ -29,6 +30,7 @@ function App() {
           <Route path="recipients" element={<Recipients />} />
           <Route path="templates" element={<Templates />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="activities" element={<Activities />} />
         </Route>
       </Routes>
     </Router>

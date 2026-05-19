@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"strings"
 
+	"whatsapp_multi_session/activity"
 	"whatsapp_multi_session/auth"
 	"whatsapp_multi_session/bulksender"
 	"whatsapp_multi_session/commandhandler"
 	"whatsapp_multi_session/config"
+	"whatsapp_multi_session/message"
 	"whatsapp_multi_session/primitive"
 	"whatsapp_multi_session/utils"
 	"whatsapp_multi_session/validator"
@@ -22,14 +24,18 @@ import (
 )
 
 type Handler struct {
-	CommandHandler commandhandler.CommandHandler
-	AuthService    *auth.Service
+	CommandHandler  commandhandler.CommandHandler
+	AuthService     *auth.Service
+	MessageService  *message.Service
+	ActivityService *activity.Service
 }
 
-func NewHandler(commandhandler commandhandler.CommandHandler, authService *auth.Service) Handler {
+func NewHandler(commandhandler commandhandler.CommandHandler, authService *auth.Service, messageService *message.Service, activityService *activity.Service) Handler {
 	return Handler{
-		CommandHandler: commandhandler,
-		AuthService:    authService,
+		CommandHandler:  commandhandler,
+		AuthService:     authService,
+		MessageService:  messageService,
+		ActivityService: activityService,
 	}
 }
 
@@ -114,6 +120,12 @@ func (h Handler) ServeSendText(c *gin.Context) {
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
+	}
+
+	// Record message to database
+	_, recordErr := h.MessageService.RecordMessageWithID(senderString, requestBody.Recipient, requestBody.Message, msgID)
+	if recordErr != nil {
+		log.Errorf("failed to record message: %v", recordErr)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "success", "id_pesan": msgID})
@@ -761,6 +773,8 @@ func (h Handler) HandleConnect(c *gin.Context) {
 		return
 	}
 
+	h.ActivityService.LogActivity(activity.TypeSessionConnect, fmt.Sprintf("Session %s connected", senderString), senderString, "", "", "success", "")
+
 	c.JSON(http.StatusOK, gin.H{"message": "success reconnect!"})
 	return
 
@@ -814,6 +828,8 @@ func (h Handler) HandleDisconnect(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
+
+	h.ActivityService.LogActivity(activity.TypeSessionDisconnect, fmt.Sprintf("Session %s disconnected", senderString), senderString, "", "", "success", "")
 
 	c.JSON(http.StatusOK, gin.H{"message": "success disconnect!"})
 	return
