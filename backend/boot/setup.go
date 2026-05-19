@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"whatsapp_multi_session/activity"
 	"whatsapp_multi_session/auth"
 	"whatsapp_multi_session/commandhandler"
 	"whatsapp_multi_session/config"
@@ -11,6 +12,7 @@ import (
 	"whatsapp_multi_session/database"
 	"whatsapp_multi_session/handler"
 	"whatsapp_multi_session/listener"
+	"whatsapp_multi_session/message"
 	"whatsapp_multi_session/proxy"
 	"whatsapp_multi_session/routers"
 
@@ -62,6 +64,20 @@ func Setup(r *gin.Engine) *gin.Engine {
 		panic(err)
 	}
 
+	// Initialize message service
+	messageService := message.NewService(rawDB.(*sql.DB), isPostgres)
+	if err := messageService.InitializeDatabase(); err != nil {
+		log.Errorf("error initializing message database: %v", err)
+		panic(err)
+	}
+
+	// Initialize activity service
+	activityService := activity.NewService(rawDB.(*sql.DB), isPostgres)
+	if err := activityService.InitializeDatabase(); err != nil {
+		log.Errorf("error initializing activity database: %v", err)
+		panic(err)
+	}
+
 	// load proxy list
 	proxyManager := proxy.NewManager()
 	err := proxyManager.LoadFromFile(config.Conf.Proxy.Directory)
@@ -80,7 +96,7 @@ func Setup(r *gin.Engine) *gin.Engine {
 	//listener on trigger shutdown
 	listen.ListenForShutdownEvent()
 
-	newHandler := handler.NewHandler(cmdHandler, authService)
+	newHandler := handler.NewHandler(cmdHandler, authService, messageService, activityService)
 	router := routers.NewRoutes(newHandler, authService)
 	appRoutes := router.V1(r)
 

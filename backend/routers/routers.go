@@ -56,6 +56,19 @@ func (r Router) V1(router *gin.Engine) *gin.Engine {
 		protected.GET("/devices/:jid", r.Handler.ServeDetailDevices)
 		protected.POST("/logout", r.Handler.Logout)
 		protected.DELETE("/message", r.Handler.DeleteMessages)
+		
+		// Message tracking endpoints
+		protected.GET("/messages", r.Handler.HandleGetMessages)
+		protected.GET("/messages/stats", r.Handler.HandleGetMessageStats)
+		protected.GET("/messages/stats/all", r.Handler.HandleGetAllMessageStats)
+		protected.POST("/messages/status", r.Handler.HandleUpdateMessageStatus)
+		
+		// Activity logging endpoints
+		protected.POST("/activities/log", r.Handler.HandleLogActivity)
+		protected.GET("/activities", r.Handler.HandleGetRecentActivities)
+		protected.GET("/activities/sender", r.Handler.HandleGetActivitiesBySender)
+		protected.GET("/activities/type", r.Handler.HandleGetActivitiesByType)
+		protected.GET("/activities/stats", r.Handler.HandleGetActivityStats)
 	}
 
 	return router
