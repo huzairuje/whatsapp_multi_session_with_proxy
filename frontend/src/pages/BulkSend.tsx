@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Send } from 'lucide-react'
 import Card from '@/components/common/Card'
-import Button from '@/components/common/Button'
 import BulkSendForm from '@/components/features/BulkSendForm'
 import { sessionApi, messageApi } from '@/services/api'
 

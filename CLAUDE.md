@@ -1,31 +1,64 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance when working with code in this repository.
 
 ## Project Overview
 
-WhatsApp multi-session engine built with Go that emulates WhatsApp Web using the [whatsmeow](https://github.com/tulir/whatsmeow) library. Provides a REST API for managing multiple WhatsApp sessions with proxy support, message sending, QR code generation, and device management.
+WhatsApp multi-session bulk messaging system with React frontend and Go backend. Features advanced anti-ban protection, session management, real-time monitoring, and proxy support. Built with [whatsmeow](https://github.com/tulir/whatsmeow) library for WhatsApp Web emulation.
 
 ## Prerequisites
 
-- **Go 1.22+** (currently using Go 1.24)
+- **Go 1.25.0+** (backend)
+- **Node.js 18+** (frontend)
 - **gcc/build-essential** (required for CGO and SQLite)
   - Linux: `sudo apt install build-essential`
   - Windows: Install mingw or gcc via choco
   - macOS: Install Xcode Command Line Tools or mingw for cross-compilation
 
+## Quick Start
+
+### Using Makefile (Recommended)
+
+```bash
+# Show all available commands
+make help
+
+# Quick start (install dependencies + build everything)
+make quickstart
+
+# Development mode (run in separate terminals)
+make dev-backend      # Terminal 1: Run backend
+make dev-frontend     # Terminal 2: Run frontend
+```
+
+### Manual Setup
+
+**Backend:**
+```bash
+cd backend
+go mod download
+env GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-w -s" -trimpath -o ../bin/whatsapp_multi_session-linux-amd64
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
 ## Build Commands
 
 **IMPORTANT:** CGO_ENABLED=1 is required for SQLite support.
 
-### Linux (native or cross-compile)
+### Linux
 ```bash
-env GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-w -s" -trimpath -o bin/whatsapp_multi_session_with_proxies-linux-amd64
+env GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-w -s" -trimpath -o ../bin/whatsapp_multi_session-linux-amd64
 ```
 
-### Windows (from Linux/macOS)
+### Windows (from Linux/macOS with mingw)
 ```bash
-env GOOS=windows GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-w -s" -trimpath -o bin/whatsapp_multi_session_with_proxies-windows-amd64.exe
+env GOOS=windows GOARCH=amd64 CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc go build -ldflags="-w -s" -trimpath -o ../bin/whatsapp_multi_session-windows-amd64.exe
 ```
 
 ### Windows (native)
@@ -33,35 +66,34 @@ env GOOS=windows GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-w -s" -trimpath 
 set GOOS=windows
 set GOARCH=amd64
 set CGO_ENABLED=1
-go build -o bin/whatsapp_multi_session-windows-amd64.exe
-```
-
-### macOS to Windows (using mingw)
-```bash
-env GOOS=windows GOARCH=amd64 CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc go build -ldflags="-w -s" -trimpath -o bin/whatsapp_multi_session_with_proxies-windows-amd64.exe
+go build -o ../bin/whatsapp_multi_session-windows-amd64.exe
 ```
 
 ## Running the Application
 
 ### Development
+
+**Terminal 1 - Backend:**
 ```bash
-# Copy example config
+cd backend
 cp config.local.yaml.example config.local.yaml
-
-# Run with default (local) environment
 go run main.go
+```
 
-# Run with specific environment
-go run main.go -env=prod
+**Terminal 2 - Frontend:**
+```bash
+cd frontend
+npm run dev
 ```
 
 ### Production
+
 ```bash
 # Linux
-./whatsapp_multi_session_with_proxies-linux-amd64
+./bin/whatsapp_multi_session-linux-amd64
 
 # Windows
-whatsapp_multi_session_with_proxies-windows-amd64.exe
+whatsapp_multi_session-windows-amd64.exe
 ```
 
 ## Configuration
@@ -80,24 +112,89 @@ Uses [Viper](https://github.com/spf13/viper) for configuration management.
 3. Current directory (`.`)
 
 ### Key Configuration Options
+
+**Server:**
+- **env**: Environment name (local, dev, uat, prod)
 - **port**: HTTP server port (default: 1234)
-- **pprof**: Enable profiling endpoint (default port: 5555)
-- **proxy.enable**: Enable proxy support for WhatsApp connections
+- **pprof.enable**: Enable profiling endpoint
+- **pprof.portPprof**: Profiling port (default: 6060)
+
+**Proxy:**
+- **proxy.enable**: Enable proxy support
 - **proxy.directory**: Path to proxy list file
+
+**Auto-Login/Logout:**
 - **startUp.enableAutoLogin**: Auto-login on startup
 - **shutDown.enableAutoShutDown**: Auto-disconnect on shutdown
 - **autoLogout**: Enable automatic logout
 - **autoDisconnect**: Enable automatic disconnect
-- **cronjob.autoPresence**: Configure auto-presence cron job
+
+**Bulk Send Anti-Ban Features:**
+- **bulkSend.minDelay**: Minimum delay between messages (ms)
+- **bulkSend.maxDelay**: Maximum delay between messages (ms)
+- **bulkSend.batchSize**: Messages per batch before pause
+- **bulkSend.batchPauseMin**: Minimum batch pause (seconds)
+- **bulkSend.batchPauseMax**: Maximum batch pause (seconds)
+- **bulkSend.dailyLimit**: Max messages per sender per day
+- **bulkSend.typingDelayMin**: Min "composing" presence duration (ms)
+- **bulkSend.typingDelayMax**: Max "composing" presence duration (ms)
+- **bulkSend.enablePresenceSimulation**: Send "composing" before each message
+- **bulkSend.allowedHourStart**: Earliest hour to send (0-23)
+- **bulkSend.allowedHourEnd**: Latest hour to send (0-23)
+- **bulkSend.timezone**: Timezone for time restrictions
+- **bulkSend.enableTimeRestrictions**: Enable time-of-day restrictions
+- **bulkSend.errorBackoffMinutes**: Pause duration after rate limit error
+- **bulkSend.enableRecipientValidation**: Validate recipients before sending
+- **bulkSend.validationCacheDuration**: Cache validation results (hours)
+- **bulkSend.enableHealthCheck**: Check session health before bulk send
+- **bulkSend.maxErrorRate**: Max acceptable error rate (0.0-1.0)
+
+**Database:**
+- **postgres.enablePostgres**: Use PostgreSQL instead of SQLite
+- **postgres.host**: PostgreSQL host
+- **postgres.port**: PostgreSQL port
+- **postgres.user**: PostgreSQL user
+- **postgres.password**: PostgreSQL password
+- **postgres.dbName**: Database name
+- **postgres.schema**: Database schema
+
+**Other:**
+- **messageStatus.enable**: Enable message status tracking
+- **cronjob.autoPresence.enable**: Enable auto-presence cron job
 - **deleteAfterSend.enable**: Delete messages after sending
-- **postgres**: PostgreSQL configuration (alternative to SQLite)
-- **redis**: Redis configuration (optional)
 
 ## Architecture Overview
 
-### Application Bootstrap (boot/setup.go)
-The `Setup()` function initializes all components in this order:
-1. **Database**: SQLite (default) or PostgreSQL based on config
+### Directory Structure
+
+```
+backend/
+├── boot/              # Application bootstrap
+├── commandhandler/    # Core business logic
+├── config/            # Configuration management
+├── cronjob/           # Background jobs
+├── database/          # Database abstraction
+├── handler/           # HTTP request handlers
+├── listener/          # Event listeners
+├── primitive/         # Shared types and constants
+├── proxy/             # Proxy management
+├── routers/           # Route registration
+├── utils/             # Utility functions
+├── validator/         # Input validation
+├── main.go            # Application entry point
+└── go.mod             # Go dependencies
+
+frontend/
+├── src/               # React source code
+├── public/            # Static assets
+├── package.json       # Node dependencies
+└── vite.config.ts     # Vite configuration
+```
+
+### Application Bootstrap (backend/boot/setup.go)
+
+The `Setup()` function initializes components in this order:
+1. **Database**: PostgreSQL or SQLite based on config
 2. **Proxy Manager**: Loads proxy list from configured directory
 3. **Command Handler**: Core business logic for WhatsApp operations
 4. **Listener**: Event listeners for startup/shutdown events
@@ -108,10 +205,10 @@ The `Setup()` function initializes all components in this order:
 ### Key Components
 
 #### commandhandler/
-Core business logic for WhatsApp operations. Manages WhatsApp client lifecycle, message sending, QR code generation, and device management. Uses a concurrent map to store active WhatsApp clients keyed by JID (user identifier).
+Core business logic for WhatsApp operations. Manages WhatsApp client lifecycle, message sending, QR code generation, device management, and bulk sending with anti-ban features. Uses concurrent map to store active clients keyed by JID.
 
 #### handler/
-HTTP request handlers that validate input, interact with CommandHandler, and return JSON responses. Each handler corresponds to an API endpoint.
+HTTP request handlers that validate input, interact with CommandHandler, and return JSON responses. Implements all API endpoints with proper error handling.
 
 #### listener/
 Event-driven lifecycle management using [gookit/event](https://github.com/gookit/event):
@@ -136,6 +233,14 @@ Shared types and constants:
 #### cronjob/
 Background job scheduler for recurring tasks like auto-presence updates.
 
+#### bulksender/
+Bulk message sending with anti-ban protection:
+- Rate limiting and delays
+- Time-of-day restrictions
+- Recipient validation with caching
+- Health monitoring
+- Error-based backoff
+
 ### Event System
 
 Uses `github.com/gookit/event` for lifecycle events:
@@ -152,7 +257,7 @@ The application handles SIGINT/SIGTERM signals:
 
 ## API Endpoints
 
-All endpoints are registered in `routers/routers.go`:
+All endpoints are registered in `backend/routers/routers.go`:
 
 ### Connection Management
 - `GET /connect` - Connect a WhatsApp session
@@ -170,7 +275,8 @@ All endpoints are registered in `routers/routers.go`:
 
 ### Messaging
 - `POST /send` - Send text message
-- `POST /send-bulk` - Send bulk messages
+- `POST /send-bulk` - Send bulk messages with anti-ban protection
+- `GET /send-bulk/status` - Get bulk send status
 - `POST /presence` - Send presence update
 - `DELETE /message` - Delete messages
 
@@ -225,9 +331,39 @@ No custom migrations are required for basic functionality.
 ### Logging
 Uses `github.com/sirupsen/logrus` for structured logging. Log level and format are configurable via config file.
 
+### Anti-Ban Features
+The bulk sender implements multiple anti-ban mechanisms:
+- **Random delays** between messages (configurable min/max)
+- **Batch pauses** after sending N messages
+- **Time-of-day restrictions** to avoid sending outside business hours
+- **Presence simulation** (typing indicators before messages)
+- **Recipient validation** with caching to avoid invalid numbers
+- **Health checks** before bulk operations
+- **Error-based backoff** when rate limits are detected
+- **Daily limits** per sender to prevent abuse
+
 ### Testing
 When adding new endpoints or modifying existing ones:
 1. Test with both SQLite and PostgreSQL backends
 2. Test with proxy enabled/disabled
 3. Verify graceful shutdown behavior
 4. Check concurrent session handling
+5. Test anti-ban features with bulk sending
+
+## Dependencies
+
+Key Go dependencies:
+- `github.com/gin-gonic/gin` - HTTP framework
+- `go.mau.fi/whatsmeow` - WhatsApp Web client
+- `github.com/spf13/viper` - Configuration management
+- `github.com/sirupsen/logrus` - Logging
+- `github.com/gookit/event` - Event system
+- `github.com/lib/pq` - PostgreSQL driver
+- `github.com/mattn/go-sqlite3` - SQLite driver
+- `github.com/skip2/go-qrcode` - QR code generation
+- `google.golang.org/protobuf` - Protocol buffers
+
+Key Node dependencies:
+- `react` - UI framework
+- `vite` - Build tool
+- `typescript` - Type safety

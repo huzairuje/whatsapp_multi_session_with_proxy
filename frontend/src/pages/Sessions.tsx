@@ -8,7 +8,6 @@ import Modal from '@/components/common/Modal'
 import SessionCard from '@/components/features/SessionCard'
 import QRCodeDisplay from '@/components/features/QRCodeDisplay'
 import { sessionApi, messageApi } from '@/services/api'
-import type { Device } from '@/types'
 
 export default function Sessions() {
   const [qrModalOpen, setQrModalOpen] = useState(false)

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"whatsapp_multi_session/auth"
 	"whatsapp_multi_session/bulksender"
 	"whatsapp_multi_session/commandhandler"
 	"whatsapp_multi_session/config"
@@ -22,11 +23,13 @@ import (
 
 type Handler struct {
 	CommandHandler commandhandler.CommandHandler
+	AuthService    *auth.Service
 }
 
-func NewHandler(commandhandler commandhandler.CommandHandler) Handler {
+func NewHandler(commandhandler commandhandler.CommandHandler, authService *auth.Service) Handler {
 	return Handler{
 		CommandHandler: commandhandler,
+		AuthService:    authService,
 	}
 }
 

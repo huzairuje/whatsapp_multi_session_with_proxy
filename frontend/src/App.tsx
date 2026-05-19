@@ -6,12 +6,22 @@ import BulkSend from './pages/BulkSend'
 import Recipients from './pages/Recipients'
 import Templates from './pages/Templates'
 import Settings from './pages/Settings'
+import Login from './pages/Login'
+import { ProtectedRoute } from './components/ProtectedRoute'
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Layout />}>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="sessions" element={<Sessions />} />

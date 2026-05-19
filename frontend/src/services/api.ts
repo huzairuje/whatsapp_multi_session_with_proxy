@@ -4,7 +4,6 @@ import type {
   DeviceWithProxy,
   SessionStatus,
   BulkSendRequest,
-  BulkSendResult,
   BulkSendStatus,
   CheckUserResponse,
   HealthStats,
@@ -19,6 +18,19 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 })
+
+// Add auth token to requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('auth_token')
+    console.log('[API] Request to:', config.url, 'Token present:', !!token)
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
 
 // Session Management
 export const sessionApi = {
@@ -134,10 +146,89 @@ export const healthApi = {
 }
 
 // Error handling interceptor
+let isRefreshing = false
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void
+  reject: (reason?: unknown) => void
+}> = []
+
+const processQueue = (error: Error | null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve()
+    }
+  })
+  failedQueue = []
+}
+
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config
+
     if (error.response) {
+      // Handle 401 Unauthorized - try to refresh token
+      if (error.response.status === 401 && !originalRequest._retry) {
+        console.log('[API] 401 Unauthorized on:', originalRequest.url)
+        if (isRefreshing) {
+          console.log('[API] Already refreshing, queuing request')
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject })
+          })
+            .then(() => {
+              return api(originalRequest)
+            })
+            .catch((err) => {
+              return Promise.reject(err)
+            })
+        }
+
+        originalRequest._retry = true
+        isRefreshing = true
+
+        const refreshToken = localStorage.getItem('auth_refresh_token')
+        console.log('[API] Refresh token present:', !!refreshToken)
+        
+        if (!refreshToken) {
+          console.log('[API] No refresh token, redirecting to login')
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('auth_username')
+          localStorage.removeItem('auth_refresh_token')
+          window.location.href = '/login'
+          return Promise.reject(error)
+        }
+
+        try {
+          console.log('[API] Attempting token refresh...')
+          const response = await axios.post('/api/refresh-token', {
+            refresh_token: refreshToken,
+          })
+
+          const { token, refresh_token } = response.data
+          console.log('[API] Token refresh successful')
+          localStorage.setItem('auth_token', token)
+          localStorage.setItem('auth_refresh_token', refresh_token)
+          
+          originalRequest.headers.Authorization = `Bearer ${token}`
+          processQueue(null)
+          
+          return api(originalRequest)
+        } catch (refreshError) {
+          console.error('[API] Token refresh failed:', refreshError)
+          processQueue(refreshError as Error)
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('auth_username')
+          localStorage.removeItem('auth_refresh_token')
+          console.log('[API] Redirecting to login due to refresh failure')
+          window.location.href = '/login'
+          return Promise.reject(refreshError)
+        } finally {
+          isRefreshing = false
+        }
+      }
+
       // Server responded with error
       const message = error.response.data?.message || error.response.data?.error || 'An error occurred'
       return Promise.reject(new Error(message))

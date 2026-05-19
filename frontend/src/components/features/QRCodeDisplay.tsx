@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import { RefreshCw, X } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import Modal from '../common/Modal'
 import Button from '../common/Button'
 import { sessionApi } from '@/services/api'

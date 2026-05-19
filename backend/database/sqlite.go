@@ -2,6 +2,8 @@ package database
 
 import (
 	"context"
+	"database/sql"
+
 	log "github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 )
@@ -22,12 +24,14 @@ func NewSqlite() (*sqlstore.Container, error) {
 	return container, nil
 }
 
-// GetConnection : Get Available Connection
+func GetRawSqliteDB() (*sql.DB, error) {
+	return sql.Open("sqlite3", "file:examplestore.db?_foreign_keys=on")
+}
+
 func GetConnection() *sqlstore.Container {
 	return conn
 }
 
-// SetConnection : Set Available Connection
 func SetConnection(connection *sqlstore.Container) {
 	conn = connection
 }

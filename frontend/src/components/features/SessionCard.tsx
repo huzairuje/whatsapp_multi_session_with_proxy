@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Smartphone, Power, LogOut, QrCode, Send, Activity } from 'lucide-react'
+import { Smartphone, Power, LogOut, QrCode, Send } from 'lucide-react'
 import Badge from '../common/Badge'
 import Button from '../common/Button'
 import Card from '../common/Card'

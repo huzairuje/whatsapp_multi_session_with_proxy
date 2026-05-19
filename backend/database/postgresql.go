@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"whatsapp_multi_session/config"
@@ -30,4 +31,14 @@ func NewPostgresClient(conf *config.Config) (*sqlstore.Container, error) {
 	SetConnection(dbConn)
 
 	return dbConn, nil
+}
+
+func GetRawPostgresDB(conf *config.Config) (*sql.DB, error) {
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		conf.Postgres.Host,
+		conf.Postgres.Port,
+		conf.Postgres.User,
+		conf.Postgres.Password,
+		conf.Postgres.DBName)
+	return sql.Open("postgres", connStr)
 }

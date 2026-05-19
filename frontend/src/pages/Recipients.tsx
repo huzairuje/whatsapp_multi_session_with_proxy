@@ -158,7 +158,7 @@ export default function Recipients() {
                 onChange={handleFileUpload}
                 className="hidden"
               />
-              <Button variant="secondary" className="w-full" onClick={() => document.querySelector('input[type="file"]')?.click()}>
+              <Button variant="secondary" className="w-full" onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}>
                 <Upload className="w-4 h-4 mr-2" />
                 Upload CSV/TXT
               </Button>

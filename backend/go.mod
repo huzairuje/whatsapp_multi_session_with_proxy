@@ -6,6 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator/v10 v10.23.0
 	github.com/go-redis/redis v6.15.9+incompatible
+	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/gookit/event v1.1.2
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.44
@@ -14,6 +15,7 @@ require (
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spf13/viper v1.19.0
 	go.mau.fi/whatsmeow v0.0.0-20260516102357-8d3700152a69
+	golang.org/x/crypto v0.51.0
 	google.golang.org/protobuf v1.36.11
 )
 
@@ -51,7 +53,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.3 // indirect
-	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/hashicorp/consul/api v1.28.2 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
@@ -109,7 +110,6 @@ require (
 	go.uber.org/multierr v1.9.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect
-	golang.org/x/crypto v0.51.0 // indirect
 	golang.org/x/exp v0.0.0-20260508232706-74f9aab9d74a // indirect
 	golang.org/x/net v0.54.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
