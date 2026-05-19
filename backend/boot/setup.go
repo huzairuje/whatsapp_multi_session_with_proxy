@@ -86,7 +86,7 @@ func Setup(r *gin.Engine) *gin.Engine {
 	}
 
 	//initiate command handler here
-	cmdHandler := commandhandler.NewCommandHandler(connDb, proxyManager)
+	cmdHandler := commandhandler.NewCommandHandler(connDb, proxyManager, messageService)
 
 	listen := listener.NewListener(cmdHandler)
 	go func() {

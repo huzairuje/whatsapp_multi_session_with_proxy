@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, RefreshCw } from 'lucide-react'
+import { Plus, RefreshCw, QrCode, Smartphone } from 'lucide-react'
 import Card from '@/components/common/Card'
 import Button from '@/components/common/Button'
 import Input from '@/components/common/Input'
 import Modal from '@/components/common/Modal'
 import SessionCard from '@/components/features/SessionCard'
 import QRCodeDisplay from '@/components/features/QRCodeDisplay'
+import PairCodeSession from '@/components/features/PairCodeSession'
 import { sessionApi, messageApi } from '@/services/api'
 
 export default function Sessions() {
@@ -14,6 +15,7 @@ export default function Sessions() {
   const [selectedSender, setSelectedSender] = useState('')
   const [phoneModalOpen, setPhoneModalOpen] = useState(false)
   const [phoneNumber, setPhoneNumber] = useState('')
+  const [connectionMethod, setConnectionMethod] = useState<'qr' | 'pair'>('qr')
   const queryClient = useQueryClient()
 
   const { data: devices, isLoading, refetch } = useQuery({
@@ -111,6 +113,50 @@ export default function Sessions() {
           </Button>
         </div>
       </div>
+
+      {/* Connection Method Toggle */}
+      <Card title="Add New Session" subtitle="Choose your preferred connection method">
+        <div className="space-y-4">
+          <div className="flex space-x-2 p-1 bg-gray-100 rounded-lg">
+            <button
+              onClick={() => setConnectionMethod('qr')}
+              className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2 rounded-md transition-all ${
+                connectionMethod === 'qr'
+                  ? 'bg-white text-primary shadow-sm font-medium'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <QrCode className="w-4 h-4" />
+              <span>QR Code</span>
+            </button>
+            <button
+              onClick={() => setConnectionMethod('pair')}
+              className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2 rounded-md transition-all ${
+                connectionMethod === 'pair'
+                  ? 'bg-white text-primary shadow-sm font-medium'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Smartphone className="w-4 h-4" />
+              <span>Pair Code</span>
+            </button>
+          </div>
+
+          {connectionMethod === 'qr' ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Scan QR code with your WhatsApp mobile app to link a new session
+              </p>
+              <Button onClick={handleAddSession}>
+                <Plus className="w-4 h-4 mr-2" />
+                Generate QR Code
+              </Button>
+            </div>
+          ) : (
+            <PairCodeSession />
+          )}
+        </div>
+      </Card>
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -15,6 +15,7 @@ import (
 
 	"whatsapp_multi_session/bulksender"
 	"whatsapp_multi_session/config"
+	"whatsapp_multi_session/message"
 	"whatsapp_multi_session/primitive"
 	"whatsapp_multi_session/proxy"
 	"whatsapp_multi_session/utils"
@@ -35,14 +36,16 @@ var (
 )
 
 type CommandHandler struct {
-	Container    *sqlstore.Container
-	ProxyManager *proxy.Manager
+	Container      *sqlstore.Container
+	ProxyManager   *proxy.Manager
+	MessageService *message.Service
 }
 
-func NewCommandHandler(container *sqlstore.Container, proxyManager *proxy.Manager) CommandHandler {
+func NewCommandHandler(container *sqlstore.Container, proxyManager *proxy.Manager, messageService *message.Service) CommandHandler {
 	return CommandHandler{
-		Container:    container,
-		ProxyManager: proxyManager,
+		Container:      container,
+		ProxyManager:   proxyManager,
+		MessageService: messageService,
 	}
 }
 
@@ -380,6 +383,27 @@ func (ch CommandHandler) HandleSendTextMessageBulk(sender types.JID, textMsg str
 	// Use the sequential anti-ban bulk sender
 	ctx := context.Background()
 	results := bulksender.SendBulkSequential(ctx, client, sender, validRecipients, textMsg, variables, utils.ParseJID)
+
+	// Record messages to database
+	if ch.MessageService != nil {
+		for _, result := range results {
+			if result.Success {
+				_, err := ch.MessageService.RecordMessageWithID(sender.User, result.Recipient, textMsg, result.MessageID)
+				if err != nil {
+					log.Errorf("[BulkSend] Failed to record message to %s: %v", result.Recipient, err)
+				}
+			} else {
+				// Record failed message with error
+				msg, err := ch.MessageService.RecordMessage(sender.User, result.Recipient, textMsg)
+				if err != nil {
+					log.Errorf("[BulkSend] Failed to record failed message to %s: %v", result.Recipient, err)
+				} else {
+					// Update status to failed
+					_ = ch.MessageService.UpdateMessageStatus(msg.MessageID, message.StatusFailed, result.Error)
+				}
+			}
+		}
+	}
 
 	// Record health metrics
 	health := GetSessionHealth(sender.User)

@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Layout from './components/layout/Layout'
 import Dashboard from './pages/Dashboard'
 import Sessions from './pages/Sessions'
+import Messages from './pages/Messages'
 import BulkSend from './pages/BulkSend'
 import Recipients from './pages/Recipients'
 import Templates from './pages/Templates'
@@ -26,6 +27,7 @@ function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="sessions" element={<Sessions />} />
+          <Route path="messages" element={<Messages />} />
           <Route path="bulk-send" element={<BulkSend />} />
           <Route path="recipients" element={<Recipients />} />
           <Route path="templates" element={<Templates />} />

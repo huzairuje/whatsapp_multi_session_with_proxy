@@ -98,7 +98,13 @@ export const messageApi = {
     }),
 
   getBulkSendStatus: (sender: string) =>
-    api.get<BulkSendStatus>('/bulk-send-status', { params: { sender } }),
+    api.get<BulkSendStatus>('/send-bulk/status', { params: { sender } }),
+
+  getMessageStats: (sender: string) =>
+    api.get('/messages/stats', { params: { sender } }),
+
+  getAllMessageStats: () =>
+    api.get('/messages/stats/all'),
 }
 
 // User Validation
@@ -143,6 +149,31 @@ export const healthApi = {
 
   getValidationStats: () =>
     api.get<ValidationCacheStats>('/validation-stats'),
+}
+
+// Activity Logging
+export const activityApi = {
+  getRecent: (limit?: number) =>
+    api.get('/activities', { params: { limit } }),
+
+  getBySender: (sender: string, limit?: number) =>
+    api.get('/activities/sender', { params: { sender, limit } }),
+
+  getByType: (type: string, limit?: number) =>
+    api.get('/activities/type', { params: { type, limit } }),
+
+  getStats: () =>
+    api.get('/activities/stats'),
+
+  log: (data: {
+    type: string
+    sender?: string
+    user?: string
+    message: string
+    details?: string
+    status?: string
+    error?: string
+  }) => api.post('/activities/log', data),
 }
 
 // Error handling interceptor

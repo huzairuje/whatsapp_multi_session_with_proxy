@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Upload, UserCheck, Trash2 } from 'lucide-react'
 import Card from '@/components/common/Card'
 import Button from '@/components/common/Button'
 import Input from '@/components/common/Input'
 import Badge from '@/components/common/Badge'
+import { sessionApi, userApi } from '@/services/api'
 
 interface Recipient {
   phone: string
@@ -17,6 +19,16 @@ export default function Recipients() {
   const [newPhone, setNewPhone] = useState('')
   const [newName, setNewName] = useState('')
   const [isValidating, setIsValidating] = useState(false)
+  const [selectedSender, setSelectedSender] = useState<string>('')
+
+  const { data: devices } = useQuery({
+    queryKey: ['devices'],
+    queryFn: async () => {
+      const response = await sessionApi.getAll()
+      return response.data
+    },
+    refetchInterval: 10000,
+  })
 
   const handleAddRecipient = () => {
     if (newPhone.trim()) {
@@ -64,26 +76,89 @@ export default function Recipients() {
   }
 
   const handleValidateAll = async () => {
+    if (!selectedSender) {
+      alert('Please select a WhatsApp session first')
+      return
+    }
+
+    if (recipients.length === 0) {
+      alert('No recipients to validate')
+      return
+    }
+
     setIsValidating(true)
-    // Simulate validation - in real app, call API
-    setTimeout(() => {
-      setRecipients(recipients.map(r => ({
-        ...r,
-        isValid: Math.random() > 0.2, // 80% valid rate
-        lastChecked: new Date(),
-      })))
+    try {
+      const phoneNumbers = recipients.map(r => r.phone)
+      const response = await userApi.checkUser(selectedSender, phoneNumbers)
+
+      // Update recipients with validation results
+      const resultsMap = new Map(response.data.map((result: any) => [result.jid.split('@')[0], result]))
+
+      setRecipients(recipients.map(r => {
+        const result = resultsMap.get(r.phone)
+        return {
+          ...r,
+          isValid: result?.IsIn || false,
+          lastChecked: new Date(),
+        }
+      }))
+    } catch (error: any) {
+      alert(`Validation failed: ${error.message || 'Unknown error'}`)
+    } finally {
       setIsValidating(false)
-    }, 2000)
+    }
+  }
+
+  const handleValidateSingle = async (phone: string) => {
+    if (!selectedSender) {
+      alert('Please select a WhatsApp session first')
+      return
+    }
+
+    try {
+      const response = await userApi.checkUserSingle(selectedSender, phone)
+
+      // Update the specific recipient with validation result
+      setRecipients(recipients.map(r => {
+        if (r.phone === phone) {
+          return {
+            ...r,
+            isValid: response.data.IsIn || false,
+            lastChecked: new Date(),
+          }
+        }
+        return r
+      }))
+    } catch (error: any) {
+      alert(`Validation failed: ${error.message || 'Unknown error'}`)
+    }
   }
 
   const handleExport = () => {
-    const csv = recipients.map(r => `${r.phone},${r.name || ''}`).join('\n')
+    if (recipients.length === 0) {
+      alert('No recipients to export')
+      return
+    }
+
+    // CSV headers
+    const headers = 'number,name,is_on_whatsapp'
+
+    // CSV rows
+    const rows = recipients.map(r => {
+      const isOnWhatsapp = r.isValid !== undefined ? (r.isValid ? 'true' : 'false') : 'not_checked'
+      return `${r.phone},${r.name || ''},${isOnWhatsapp}`
+    })
+
+    // Combine headers and rows
+    const csv = [headers, ...rows].join('\n')
+
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'recipients.csv'
+    a.download = `recipients_${new Date().toISOString().split('T')[0]}.csv`
     a.click()
+    URL.revokeObjectURL(url)
   }
 
   const validCount = recipients.filter(r => r.isValid).length
@@ -128,6 +203,30 @@ export default function Recipients() {
       {/* Add Recipients */}
       <Card title="Add Recipients">
         <div className="space-y-4">
+          {/* Sender Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select WhatsApp Session for Validation
+            </label>
+            <select
+              value={selectedSender}
+              onChange={(e) => setSelectedSender(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="">Select a session...</option>
+              {devices?.filter(d => d.isLoggedIn).map((device) => (
+                <option key={device.user} value={device.user}>
+                  +{device.user} {device.pushName ? `(${device.pushName})` : ''}
+                </option>
+              ))}
+            </select>
+            {(!devices || devices.filter(d => d.isLoggedIn).length === 0) && (
+              <p className="text-xs text-red-600 mt-1">
+                No active sessions available. Please connect a session first.
+              </p>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
               placeholder="Phone number (e.g., 6281234567890)"
@@ -208,6 +307,14 @@ export default function Recipients() {
                       {recipient.isValid ? 'Valid' : 'Invalid'}
                     </Badge>
                   )}
+                  <button
+                    onClick={() => handleValidateSingle(recipient.phone)}
+                    disabled={!selectedSender}
+                    className="text-blue-500 hover:text-blue-700 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed"
+                    title={!selectedSender ? 'Select a session first' : 'Validate this number'}
+                  >
+                    <UserCheck className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={() => handleRemoveRecipient(recipient.phone)}
                     className="text-red-500 hover:text-red-700 transition-colors"

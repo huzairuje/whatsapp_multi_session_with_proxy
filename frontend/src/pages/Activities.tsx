@@ -1,5 +1,5 @@
 import ActivityStats from '@/components/features/ActivityStats'
-import ActivityLog from '@/components/features/ActivityLog'
+import ActivityLogFiltered from '@/components/features/ActivityLogFiltered'
 
 export default function Activities() {
   return (
@@ -11,7 +11,7 @@ export default function Activities() {
 
       <ActivityStats />
 
-      <ActivityLog />
+      <ActivityLogFiltered />
     </div>
   )
 }

@@ -69,10 +69,6 @@ func (h Handler) HandleGetAllMessageStats(c *gin.Context) {
 
 func (h Handler) HandleGetMessages(c *gin.Context) {
 	sender := c.Query("sender")
-	if sender == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "sender parameter required"})
-		return
-	}
 
 	limitStr := c.DefaultQuery("limit", "50")
 	offsetStr := c.DefaultQuery("offset", "0")
@@ -87,7 +83,15 @@ func (h Handler) HandleGetMessages(c *gin.Context) {
 		offset = 0
 	}
 
-	messages, err := h.MessageService.GetMessagesBySender(sender, limit, offset)
+	var messages []*message.Message
+	if sender == "" {
+		// Get messages from all senders
+		messages, err = h.MessageService.GetAllMessages(limit, offset)
+	} else {
+		// Get messages from specific sender
+		messages, err = h.MessageService.GetMessagesBySender(sender, limit, offset)
+	}
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get messages"})
 		return

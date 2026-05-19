@@ -77,6 +77,16 @@ func (s *Service) GetMessagesBySender(sender string, limit, offset int) ([]*Mess
 	return s.repo.GetMessagesBySender(sender, limit, offset)
 }
 
+func (s *Service) GetAllMessages(limit, offset int) ([]*Message, error) {
+	if limit <= 0 {
+		limit = 100
+	}
+	if limit > 1000 {
+		limit = 1000
+	}
+	return s.repo.GetAllMessages(limit, offset)
+}
+
 func (s *Service) GetStatsBySender(sender string) (*MessageStats, error) {
 	return s.repo.GetStatsBySender(sender)
 }

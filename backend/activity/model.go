@@ -17,11 +17,14 @@ const (
 	TypeBulkSendError     ActivityType = "bulk_send_error"
 	TypeRateLimit         ActivityType = "rate_limit"
 	TypeAutoLogin         ActivityType = "auto_login"
+	TypeAutoDisconnect    ActivityType = "auto_disconnect"
 	TypeHealthCheck       ActivityType = "health_check"
 	TypeHealthCheckFailed ActivityType = "health_check_failed"
 	TypeQRGenerated       ActivityType = "qr_generated"
+	TypePairCode          ActivityType = "pair_code"
 	TypeUserLogin         ActivityType = "user_login"
 	TypeUserLogout        ActivityType = "user_logout"
+	TypeLogout            ActivityType = "logout"
 )
 
 type Activity struct {

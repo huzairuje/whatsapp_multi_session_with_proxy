@@ -179,6 +179,7 @@ func (h Handler) ServeSendTextBulk(c *gin.Context) {
 
 	// Run bulk send in background (it's sequential and slow by design)
 	go func() {
+		h.ActivityService.LogActivity(activity.TypeBulkSendStart, fmt.Sprintf("Bulk send started for %d recipients", len(requestBody.Recipients)), senderString, "", fmt.Sprintf("Recipients: %d", len(requestBody.Recipients)), "started", "")
 		h.CommandHandler.HandleSendTextMessageBulk(senderJidTypes, requestBody.Message, requestBody.Recipients, requestBody.Variables)
 	}()
 
@@ -335,6 +336,7 @@ func (h Handler) ServeAutoLogin(c *gin.Context) {
 		h.CommandHandler.HandleLoginAllDevices()
 	}()
 
+	h.ActivityService.LogActivity(activity.TypeAutoLogin, "Auto-login triggered for all devices", "", "", "", "started", "")
 	c.JSON(http.StatusOK, gin.H{"message": primitive.MessageTriggeredAutoLogin})
 	return
 }
@@ -359,6 +361,7 @@ func (h Handler) ServeAutoDisconnect(c *gin.Context) {
 		// Execute the HandleDisconnectAllDevices function
 		h.CommandHandler.HandleDisconnectAllDevices()
 	}()
+	h.ActivityService.LogActivity(activity.TypeAutoDisconnect, "Auto-disconnect triggered for all devices", "", "", "", "started", "")
 	c.JSON(http.StatusOK, gin.H{"message": primitive.MessageTriggeredAutoDisconnect})
 	return
 }
@@ -737,6 +740,7 @@ func (h Handler) HandleQR(c *gin.Context) {
 			return
 		}
 
+		h.ActivityService.LogActivity(activity.TypeQRGenerated, fmt.Sprintf("QR code generated for %s", senderString), senderString, "", "", "success", "")
 		c.Data(http.StatusOK, "image/png", []byte(base64qrcode))
 		return
 
@@ -752,6 +756,7 @@ func (h Handler) HandleQR(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusOK, gin.H{"message": err.Error()})
 			return
 		}
+		h.ActivityService.LogActivity(activity.TypeQRGenerated, fmt.Sprintf("QR code generated for %s", senderString), senderString, "", "", "success", "")
 		c.Data(http.StatusOK, "image/png", []byte(base64qrcode))
 		return
 	}
@@ -804,11 +809,13 @@ func (h Handler) HandleConnectBulk(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
+	h.ActivityService.LogActivity(activity.TypeSessionConnect, fmt.Sprintf("Bulk connect: %d devices connected", len(senderJidTypesBulk)), "", "", fmt.Sprintf("Devices: %v", senderJidTypesBulk), "success", "")
 	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("connected devices : %v", senderJidTypesBulk)})
 	return
 }
 
 func (h Handler) HandleHealthCheck(c *gin.Context) {
+	h.ActivityService.LogActivity(activity.TypeHealthCheck, "Health check performed", "", "", "", "success", "")
 	c.JSON(http.StatusOK, gin.H{"message": "server is alive and ok!"})
 	return
 }
@@ -860,6 +867,7 @@ func (h Handler) HandleDisconnectBulk(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
+	h.ActivityService.LogActivity(activity.TypeSessionDisconnect, fmt.Sprintf("Bulk disconnect: %d devices disconnected", len(senderJidTypesBulk)), "", "", fmt.Sprintf("Devices: %v", senderJidTypesBulk), "success", "")
 	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("disconnected devices : %v", senderJidTypesBulk)})
 	return
 }
@@ -885,6 +893,7 @@ func (h Handler) HandlePairCode(c *gin.Context) {
 		return
 	}
 
+	h.ActivityService.LogActivity(activity.TypePairCode, fmt.Sprintf("Pair code generated for %s", senderString), senderString, "", fmt.Sprintf("Code: %s", pairCode), "success", "")
 	c.JSON(http.StatusOK, gin.H{"pair_code": pairCode})
 	return
 
@@ -967,6 +976,7 @@ func (h Handler) Logout(c *gin.Context) {
 		return
 	}
 
+	h.ActivityService.LogActivity(activity.TypeLogout, fmt.Sprintf("Session %s logged out", senderString), senderString, "", "", "success", "")
 	c.JSON(http.StatusOK, gin.H{"message": "success logout"})
 	return
 }

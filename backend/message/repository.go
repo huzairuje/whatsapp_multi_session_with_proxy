@@ -143,6 +143,34 @@ func (r *Repository) GetMessagesBySender(sender string, limit, offset int) ([]*M
 	return messages, nil
 }
 
+func (r *Repository) GetAllMessages(limit, offset int) ([]*Message, error) {
+	var query string
+	if r.isPostgres {
+		query = `SELECT id, sender, recipient, content, status, message_id, error, created_at, updated_at
+				 FROM messages ORDER BY created_at DESC LIMIT $1 OFFSET $2`
+	} else {
+		query = `SELECT id, sender, recipient, content, status, message_id, error, created_at, updated_at
+				 FROM messages ORDER BY created_at DESC LIMIT ? OFFSET ?`
+	}
+
+	rows, err := r.db.Query(query, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	messages := []*Message{}
+	for rows.Next() {
+		msg := &Message{}
+		err := rows.Scan(&msg.ID, &msg.Sender, &msg.Recipient, &msg.Content, &msg.Status, &msg.MessageID, &msg.Error, &msg.CreatedAt, &msg.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, msg)
+	}
+	return messages, nil
+}
+
 func (r *Repository) GetStatsBySender(sender string) (*MessageStats, error) {
 	stats := &MessageStats{}
 

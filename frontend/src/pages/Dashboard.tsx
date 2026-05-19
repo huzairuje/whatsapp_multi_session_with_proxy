@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { Smartphone, Send, CheckCircle, TrendingUp, Activity, AlertTriangle } from 'lucide-react'
 import Card from '@/components/common/Card'
 import StatsCard from '@/components/features/StatsCard'
 import Badge from '@/components/common/Badge'
-import { sessionApi, messageApi } from '@/services/api'
+import MessageHistory from '@/components/features/MessageHistory'
+import { sessionApi, messageApi, activityApi } from '@/services/api'
 
 export default function Dashboard() {
   const { data: devices, isLoading: devicesLoading } = useQuery({
@@ -35,28 +37,53 @@ export default function Dashboard() {
     enabled: !!devices && devices.length > 0,
   })
 
+  const { data: messageStats } = useQuery({
+    queryKey: ['message-stats-all'],
+    queryFn: async () => {
+      const response = await messageApi.getAllMessageStats()
+      return response.data
+    },
+    refetchInterval: 10000,
+  })
+
   const connectedSessions = devices?.filter(d => d.isLoggedIn).length || 0
   const totalSessions = devices?.length || 0
 
-  const totalMessagesSent = Object.values(bulkStatuses || {}).reduce(
-    (sum, status: any) => sum + (status?.daily_count || 0),
-    0
-  )
+  const totalMessagesSent = messageStats?.daily_count || 0
 
-  const totalLimit = Object.values(bulkStatuses || {}).reduce(
-    (sum, status: any) => sum + (status?.daily_limit || 0),
-    0
-  )
+  const successRate = messageStats && (messageStats.total_sent + messageStats.total_failed) > 0
+    ? ((messageStats.total_sent / (messageStats.total_sent + messageStats.total_failed)) * 100).toFixed(1)
+    : '0'
 
-  const successRate = totalLimit > 0 ? ((totalMessagesSent / totalLimit) * 100).toFixed(1) : '0'
+  const { data: recentActivitiesData } = useQuery({
+    queryKey: ['recent-activities'],
+    queryFn: async () => {
+      const response = await activityApi.getRecent(5)
+      return response.data
+    },
+    refetchInterval: 30000, // Refresh every 30 seconds
+  })
 
-  const recentActivity = [
-    { time: '10:30', message: 'Bulk send completed: 50/50 messages sent', type: 'success' },
-    { time: '10:15', message: 'Session +6281234567890 connected', type: 'info' },
-    { time: '09:45', message: 'Rate limit detected, backed off 30 minutes', type: 'warning' },
-    { time: '09:30', message: 'Health check passed for all sessions', type: 'success' },
-    { time: '09:00', message: 'Auto-login completed for 5 sessions', type: 'info' },
-  ]
+  const recentActivity = (recentActivitiesData || []).map((activity: any) => {
+    const time = new Date(activity.created_at).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
+
+    let type = 'info'
+    if (activity.status === 'success' || activity.type.includes('connect')) {
+      type = 'success'
+    } else if (activity.status === 'error' || activity.status === 'failed' || activity.type.includes('failed')) {
+      type = 'warning'
+    }
+
+    return {
+      time,
+      message: activity.message,
+      type
+    }
+  })
 
   const getHealthStatus = (device: any) => {
     const status = bulkStatuses?.[device.user]
@@ -163,9 +190,19 @@ export default function Dashboard() {
         </Card>
 
         {/* Recent Activity */}
-        <Card title="Recent Activity">
+        <Card
+          title="Recent Activity"
+          action={
+            <Link
+              to="/activities"
+              className="text-sm text-primary hover:text-primary-dark font-medium"
+            >
+              View All →
+            </Link>
+          }
+        >
           <div className="space-y-3">
-            {recentActivity.map((activity, index) => (
+            {recentActivity.map((activity: { time: string; message: string; type: string }, index: number) => (
               <div key={index} className="flex items-start space-x-3">
                 <div className="flex-shrink-0 mt-1">
                   {activity.type === 'success' && (
@@ -214,6 +251,9 @@ export default function Dashboard() {
           </div>
         </div>
       </Card>
+
+      {/* Message History */}
+      <MessageHistory />
 
       {/* Quick Actions */}
       <Card title="Quick Actions">

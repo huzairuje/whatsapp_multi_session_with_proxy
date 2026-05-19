@@ -6,14 +6,18 @@ import {
   Users,
   FileText,
   Settings,
+  Activity,
+  MessageSquare,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Sessions', href: '/sessions', icon: Smartphone },
+  { name: 'Messages', href: '/messages', icon: MessageSquare },
   { name: 'Bulk Send', href: '/bulk-send', icon: Send },
   { name: 'Recipients', href: '/recipients', icon: Users },
+  { name: 'Activities', href: '/activities', icon: Activity },
   { name: 'Templates', href: '/templates', icon: FileText },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
