@@ -117,7 +117,8 @@ Uses [Viper](https://github.com/spf13/viper) for configuration management.
 - **env**: Environment name (local, dev, uat, prod)
 - **port**: HTTP server port (default: 1234)
 - **pprof.enable**: Enable profiling endpoint
-- **pprof.portPprof**: Profiling port (default: 6060)
+- **pprof.pprofPort**: Profiling port (default: 5555)
+- **pprof.pprofAddress**: Profiling address (default: localhost)
 
 **Proxy:**
 - **proxy.enable**: Enable proxy support
@@ -158,9 +159,16 @@ Uses [Viper](https://github.com/spf13/viper) for configuration management.
 - **postgres.dbName**: Database name
 - **postgres.schema**: Database schema
 
+**Redis:**
+- **redis.enableRedis**: Enable Redis caching
+- **redis.host**: Redis host
+- **redis.port**: Redis port
+- **redis.password**: Redis password
+- **redis.db**: Redis database number
+
 **Other:**
-- **messageStatus.enable**: Enable message status tracking
 - **cronjob.autoPresence.enable**: Enable auto-presence cron job
+- **cronjob.autoPresence.cronJobSchedule**: Cron schedule for auto-presence
 - **deleteAfterSend.enable**: Delete messages after sending
 
 ## Architecture Overview
@@ -169,13 +177,19 @@ Uses [Viper](https://github.com/spf13/viper) for configuration management.
 
 ```
 backend/
+├── activity/          # Activity logging service
+├── auth/              # Authentication & authorization
 ├── boot/              # Application bootstrap
+├── client/            # External clients (HTTP, Redis)
+│   ├── http/          # HTTP client
+│   └── redis/         # Redis client
 ├── commandhandler/    # Core business logic
 ├── config/            # Configuration management
 ├── cronjob/           # Background jobs
 ├── database/          # Database abstraction
 ├── handler/           # HTTP request handlers
 ├── listener/          # Event listeners
+├── message/           # Message tracking service
 ├── primitive/         # Shared types and constants
 ├── proxy/             # Proxy management
 ├── routers/           # Route registration
@@ -195,20 +209,57 @@ frontend/
 
 The `Setup()` function initializes components in this order:
 1. **Database**: PostgreSQL or SQLite based on config
-2. **Proxy Manager**: Loads proxy list from configured directory
-3. **Command Handler**: Core business logic for WhatsApp operations
-4. **Listener**: Event listeners for startup/shutdown events
-5. **HTTP Handler**: Request handlers for REST API
-6. **Router**: API route registration
-7. **Cronjob**: Background jobs (e.g., auto-presence)
+2. **Auth Service**: User authentication and JWT token management
+3. **Message Service**: Message tracking and statistics
+4. **Activity Service**: Activity logging and audit trail
+5. **Proxy Manager**: Loads proxy list from configured directory
+6. **Command Handler**: Core business logic for WhatsApp operations
+7. **Listener**: Event listeners for startup/shutdown events
+8. **HTTP Handler**: Request handlers for REST API
+9. **Router**: API route registration
+10. **Cronjob**: Background jobs (e.g., auto-presence)
 
 ### Key Components
+
+#### auth/
+Authentication and authorization service with JWT-based token management:
+- User registration and login with bcrypt password hashing
+- JWT access tokens (15 min expiry) and refresh tokens (7 day expiry)
+- Auth middleware for protecting routes
+- Default admin user created on first run (username: admin, password: admin123)
+- Password change functionality
+- Supports both SQLite and PostgreSQL
+
+#### message/
+Message tracking service for monitoring sent messages:
+- Records all sent messages with sender, recipient, content, and status
+- Status tracking: pending, sent, delivered, read, failed
+- Message statistics by sender (total, sent, delivered, read, failed counts)
+- Aggregate statistics across all senders
+- Supports both SQLite and PostgreSQL
+
+#### activity/
+Activity logging service for audit trail and monitoring:
+- Logs user activities (connect, disconnect, send_message, bulk_send, etc.)
+- Activity types: connect, disconnect, send_message, bulk_send, qr_generate, pair_code, logout
+- Filter activities by sender, type, or time range
+- Activity statistics and recent activity queries
+- Supports both SQLite and PostgreSQL
+
+#### client/
+External client integrations:
+- **http/**: HTTP client for making external API calls
+- **redis/**: Redis client for caching and session management
 
 #### commandhandler/
 Core business logic for WhatsApp operations. Manages WhatsApp client lifecycle, message sending, QR code generation, device management, and bulk sending with anti-ban features. Uses concurrent map to store active clients keyed by JID.
 
 #### handler/
-HTTP request handlers that validate input, interact with CommandHandler, and return JSON responses. Implements all API endpoints with proper error handling.
+HTTP request handlers that validate input, interact with CommandHandler, and return JSON responses. Implements all API endpoints with proper error handling. Split into multiple files:
+- `handler.go`: Main WhatsApp operation handlers (33.7K)
+- `auth_handler.go`: Authentication handlers (1.8K)
+- `message_handler.go`: Message tracking handlers (2.4K)
+- `activity_handler.go`: Activity logging handlers (2.3K)
 
 #### listener/
 Event-driven lifecycle management using [gookit/event](https://github.com/gookit/event):
@@ -259,7 +310,12 @@ The application handles SIGINT/SIGTERM signals:
 
 All endpoints are registered in `backend/routers/routers.go`:
 
-### Connection Management
+### Authentication (Public Routes)
+- `POST /login` - User login with username/password
+- `POST /refresh-token` - Refresh JWT access token
+- `GET /health-check` - Health check endpoint
+
+### Connection Management (Protected)
 - `GET /connect` - Connect a WhatsApp session
 - `POST /connect-bulk` - Connect multiple sessions
 - `GET /disconnect` - Disconnect a session
@@ -268,19 +324,19 @@ All endpoints are registered in `backend/routers/routers.go`:
 - `GET /auto-disconnect` - Auto-disconnect handler
 - `POST /logout` - Logout a session
 
-### QR Code & Pairing
+### QR Code & Pairing (Protected)
 - `GET /qr` - Generate QR code (image)
 - `GET /qr-json` - Generate QR code (JSON response)
 - `GET /pair-code` - Generate pairing code
 
-### Messaging
+### Messaging (Protected)
 - `POST /send` - Send text message
 - `POST /send-bulk` - Send bulk messages with anti-ban protection
 - `GET /send-bulk/status` - Get bulk send status
 - `POST /presence` - Send presence update
 - `DELETE /message` - Delete messages
 
-### User & Device Management
+### User & Device Management (Protected)
 - `POST /check-user` - Check if users exist on WhatsApp
 - `POST /check-user-single` - Check single user
 - `GET /devices` - List all devices
@@ -288,12 +344,25 @@ All endpoints are registered in `backend/routers/routers.go`:
 - `GET /device-proxies` - List device-proxy mappings
 - `GET /status` - Get session status
 
-### File Upload
+### File Upload (Protected)
 - `POST /upload` - Upload media file
 - `POST /upload-single` - Upload single media file
 
-### Health Check
-- `GET /health-check` - Health check endpoint
+### User Account (Protected)
+- `POST /change-password` - Change user password
+
+### Message Tracking (Protected)
+- `GET /messages` - Get messages with filtering
+- `GET /messages/stats` - Get message statistics by sender
+- `GET /messages/stats/all` - Get aggregate message statistics
+- `POST /messages/status` - Update message status
+
+### Activity Logging (Protected)
+- `POST /activities/log` - Log user activity
+- `GET /activities` - Get recent activities
+- `GET /activities/sender` - Get activities by sender
+- `GET /activities/type` - Get activities by type
+- `GET /activities/stats` - Get activity statistics
 
 ## Development Notes
 
@@ -320,13 +389,29 @@ When proxy support is enabled (`config.Conf.Proxy.Enable`):
 - Proxy list is loaded from file specified in `config.Conf.Proxy.Directory`
 - Proxy manager handles assignment and rotation
 
+### Authentication System
+The application uses JWT-based authentication:
+- **Default Admin User**: Created automatically on first run
+  - Username: `admin`
+  - Password: `admin123`
+  - **IMPORTANT**: Change the default password immediately after first login
+- **Access Tokens**: Valid for 15 minutes
+- **Refresh Tokens**: Valid for 7 days
+- **Protected Routes**: All endpoints except `/login`, `/refresh-token`, and `/health-check` require authentication
+- **Auth Header**: Include JWT token in `Authorization: Bearer <token>` header
+
 ### Database Schema
 The whatsmeow library manages its own database schema for:
 - Device information
 - Message store
 - Session data
 
-No custom migrations are required for basic functionality.
+Additional tables are created by the application services:
+- **users**: User accounts and authentication (auth service)
+- **messages**: Message tracking and status (message service)
+- **activities**: Activity logs and audit trail (activity service)
+
+All tables support both SQLite and PostgreSQL.
 
 ### Logging
 Uses `github.com/sirupsen/logrus` for structured logging. Log level and format are configurable via config file.
@@ -345,10 +430,13 @@ The bulk sender implements multiple anti-ban mechanisms:
 ### Testing
 When adding new endpoints or modifying existing ones:
 1. Test with both SQLite and PostgreSQL backends
-2. Test with proxy enabled/disabled
-3. Verify graceful shutdown behavior
-4. Check concurrent session handling
-5. Test anti-ban features with bulk sending
+2. Test with Redis enabled/disabled
+3. Test with proxy enabled/disabled
+4. Verify graceful shutdown behavior
+5. Check concurrent session handling
+6. Test anti-ban features with bulk sending
+7. Test authentication and authorization
+8. Verify message tracking and activity logging
 
 ## Dependencies
 
@@ -362,6 +450,8 @@ Key Go dependencies:
 - `github.com/mattn/go-sqlite3` - SQLite driver
 - `github.com/skip2/go-qrcode` - QR code generation
 - `google.golang.org/protobuf` - Protocol buffers
+- `github.com/golang-jwt/jwt/v5` - JWT authentication
+- `golang.org/x/crypto/bcrypt` - Password hashing
 
 Key Node dependencies:
 - `react` - UI framework
